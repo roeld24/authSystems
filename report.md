@@ -170,6 +170,20 @@ Funzionamento
 Studiare il framework di autorizzazione OAUTH2 e spiegare le differenze con JWT. 
 
 ## SVOLGIMENTO
+OAuth 2.0 è un sistema che permette a un'applicazione di accedere a dati o servizi senza chiedere direttamente la password all'utente. Separa chi chiede l'accesso da chi possiede i dati, affidando il controllo a un server speciale chiamato Authorization Server. Nel punto 2 sono gia' stati definiti i 4 ruoli principali (vedi il [punto 2](#oauth-20)).
+
+Modi per ottenere un token:
+- Authorization Code Flow: usato da app web e mobile. L'utente si autentica, l'app riceve un codice da scambiare con un token
+- Implicit Flow: piu' vecchio, per app browser
+- Client credentials flow: per server-to-server, senza utente
+- Resource Owner Password Flow: l'app riceve direttamente username e password
+
+OAuth non obbliga un formato specifico di token ma sono spesso JWT.
+
+Differenze Principali tra JWT e OAuth 2.0:
+- OAuth  dice chi puo' fare cosa e come, mentre JWT è il formato sicuro che puo' contenere queste informazioni
+- JWT è un token che trasporta informazioni sicure
+- OAuth è un framework che spiega come ottenere e usare i token. Gestisce permessi, durata e accesso delegato tra app e utenti
 
 ### Fonti
 - https://auth0.com/docs/authorization/protocols/protocol-oauth2
