@@ -96,7 +96,10 @@ Cercare e documentare le principali alternative di autenticazione (JWT, OAUTH, S
 Quando una applicazione deve comunicare con infrastrutture eterogenee signidica che parla con sistemi diversi tra loro: server, database ecc...
 Per farli dialogare si usano spesso le API, cioe' punti di accesso che permettono a un software di chiedere dati o servizi a un altro software.
 
-Per rendere sicura una API bisogna proteggere sia il canale sia chi ci accede. Si usa una connessione cifrata (HTTPS) per evitare che i dati possano essere letti luno il percorso. Poi si verifica l'identita' di chi chiama l'API tramite chiavi, token o altri meccanismi di autenticazione.
+Per rendere sicura una API bisogna proteggere sia il canale sia chi ci accede. Si usa una connessione cifrata (HTTPS) per evitare che i dati possano essere letti luno il percorso. Poi si verifica l'identita' di chi chiama l'API tramite chiavi, token o altri meccanismi di autenticazione. La protezione di una API passa da due pilastri principali:
+
+- Autenticazione: verificare l'identita' del client
+- Autorizzazione: definire cosa puo' fare quel client
 
 Perchè questa comunicazione avvenga in modo sicuro bisogna quindi che sia cifrata, controllata e limitata.
 
@@ -119,8 +122,37 @@ Funzionamento
   - Resta valido finche' non scade (se viene rubato nel periodo di funzionamento puo' essere usato)
 
 ### OAuth 2.0
-### SAML 2.0
+E' un sistema che permette a una applicazione di accedere a certe informazioni di un utente senza chiedere la sua password. E' lo standard utilizzato da Google, Facebook e altri servizi per far dialogiare app diverse in sicurezza. 
 
+Ci sono quattro ruoli principali: 
+- Resource Owner: l'utente proprietario dei dati
+- Client: l'app che vuole accedere ai dati
+- Authorization Server: il server che autentica l'utente e rilascia i token
+- Resource Server: l'API che fornisce i dati e verifica i token
+
+Flusso Authorization Code
+
+![OauthWorkingDiagram](./img/OauthWorkingDiagram.png)
+
+- Vantaggi
+  - L'utente non condivide le password
+  - L'accesso è limitato e controllato
+  - I token possono avere durata breve ed essere rinnovati
+  
+- Svantaggi
+  - Architettura complessa che puo' portare a vulnerabilita' in caso di sbagli 
+  - token e permessi vanno gestiti correttamente
+
+### SAML 2.0
+E' un protocollo pensato per permettere il Single Sign-ON (SSO) tra applicazioni diverse. Permette quindi a un utente di autenticarsi una volta sola e poi accedere a piu' servizi senza dover reinserirre la password ogni volta, servizio ampiamente utilizzato in ambiti di aziende o universitari.
+
+Come per il JWT funziona tramite asserzioni e ognuna di esse ha un identificativo unico e una validita' temporale, cosi' che non possa essere riutilizzata indebitamente.
+
+Funzionamento
+
+![SamlWorkingDiagram](./img/SamlWorkingDiagram.png)
+
+- Vantaggi
 
 ### Fonti
 - https://www.kelltontech.com/kellton-tech-blog/api-security-design-patterns
