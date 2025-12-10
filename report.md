@@ -73,6 +73,17 @@ L'utente conferma il login su uno smartphone registrato usando una app o un elem
   - Manutenzione e aggiornamento dell'app
 
 ### FIDO2
+Autenticazione a chiave pubblica tramite token hardware
+
+![Fido2Diagram](./img/Fido2Diagram.png)
+
+- Vantaggi
+  - Non esistono costi relativi a SMS o applicazioni
+  - Sicurezza altissima, riduce i costi di incident response
+- Svantaggi
+  - Un token hardware puo' costare dai 20 ai 60 euro a persona
+  - Distribuzione e gestione fisica delle chiavi agli utenti
+  - Supporto nel caso di smarrimento o rottura delle chiavi
 
 
 # 2 - COME RENDERE SICURA UNA API
