@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { testConnection } = require('./src/config/database');
 const authRoutes = require('./src/routes/auth.routes');
+const protectedRoutes = require('./src/routes/protected.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,6 +29,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/protected', protectedRoutes);
 
 // Start server
 app.listen(PORT, () => {
