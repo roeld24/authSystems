@@ -153,6 +153,13 @@ Funzionamento
 ![SamlWorkingDiagram](./img/SamlWorkingDiagram.png)
 
 - Vantaggi
+  - Perfetto per ecosistemi corporate con piu' applicazioni
+  - Ideale per identita' centralizzate
+  
+- Svantaggi
+  - Usa XML che puo' risultare verboso
+  - Implementazione complessa
+  - Non è pensato per API REST moderne
 
 ### Fonti
 - https://www.kelltontech.com/kellton-tech-blog/api-security-design-patterns
