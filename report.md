@@ -101,6 +101,23 @@ Per rendere sicura una API bisogna proteggere sia il canale sia chi ci accede. S
 Perchè questa comunicazione avvenga in modo sicuro bisogna quindi che sia cifrata, controllata e limitata.
 
 ### JWT
+I JSON Web Token sono un modo standard per consegnare a una applicazione un pass digitale che prova identita' e cosa puoi fare. E' composto da tre parti:
+- Header: contiene informazioni su che tipo di token è e quale algoritmo è usato per firmarlo
+- Payload: contiene le "asserzioni", dati sull'utente o sull'applicazione quindi chi ha emesso il token, per chi è valido, quando scade ecc...
+- Signature: è la firma crittografica che impedisce a chiunque di modificare il token senza essere scoperto
+
+Funzionamento
+
+![JWTWorkingDiagram](./img/JWTWorkingDiagram.png)
+
+- Vantaggi
+  - Leggero
+  - Facile da leggere 
+  - Supportato globalmente
+
+- Rischi
+  - Resta valido finche' non scade (se viene rubato nel periodo di funzionamento puo' essere usato)
+
 ### OAuth 2.0
 ### SAML 2.0
 
