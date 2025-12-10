@@ -35,20 +35,49 @@ Studiare casi distinti d'applicazione per autenticazione di utenti che fanno uso
 
 Descrivere il flusso di informazione di queste architetture nelle fasi di user authentication (non di user registration).
 
-spiegare vantaggi e svantaggi a livello di costi di implementazione di architetture del genere
+Spiegare vantaggi e svantaggi a livello di costi di implementazione di architetture del genere
+
+## SVOLGIMENTO
+Metodi:
+- mTAN (SMS-TAN)
+- Mobile ID
+- FIDO2/WebAuthn con chiave hardware
+
+### mTAN
+Il server invia un codice temporaneo via SMS al numero registrato dall'utente
+
+![mTANdiagram](./img/mTAN_diagram.png)
+
+- Vantaggi 
+  - L'SMS gateway è relativamente economico (0.50 - 0.70 centesimi a SMS)
+  - Non serve sviluppare una app dedicata
+  
+- Svantaggi
+  - Serve un contratto con un provider SMS affifabile
+  - Tecnologia a rischio di futura migrazione
+  - Problemi di roaming o mancata consegna possono portare a costi operativi di assistenza
+### Mobile ID
+### FIDO2
+
 
 # 2 - COME RENDERE SICURA UNA API
 Comunicazione tra applicazione e infrastrutture eterogenee:come rendere sicura una API. A differenza del punto precedente questa soluzione prevede un progetto pratico di sviluppo di una applicazione delle tecniche da studiare.
 
 Cercare e documentare le principali alternative di autenticazione (JWT, OAUTH, SAML).
 
-## Fonti
+## SVOLGIMENTO
+
+### Fonti
 - https://www.kelltontech.com/kellton-tech-blog/api-security-design-patterns
+
+
 
 # 4 - OAUTH2
 Studiare il framework di autorizzazione OAUTH2 e spiegare le differenze con JWT. 
 
-## Fonti
+## SVOLGIMENTO
+
+### Fonti
 - https://auth0.com/docs/authorization/protocols/protocol-oauth2
 - https://auth0.com/docs/authorization/flows/call-your-api-using-the-authorization-code-flow
 
@@ -56,3 +85,5 @@ Studiare il framework di autorizzazione OAUTH2 e spiegare le differenze con JWT.
 Per i sistemi JWT usati in questa esercitazione teorica e di laboratorio, quali rischi per la privacy si possono identificare?
 
 Sarebbe possibile implementare una contromisura che garantisca una migliore privacy?
+
+## SVOLGIMENTO
