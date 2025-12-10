@@ -23,7 +23,10 @@ app.get('/', (req, res) => {
       register: 'POST /api/auth/register',
       login: 'POST /api/auth/login',
       refresh: 'POST /api/auth/refresh',
-      jwk: 'GET /api/auth/jwk'
+      jwk: 'GET /api/auth/jwk',
+      jwtProtected: 'GET /api/protected/jwt-protected',
+      jwsProtected: 'GET /api/protected/jws-protected',
+      jweProtected: 'GET /api/protected/jwe-protected'
     }
   });
 });
