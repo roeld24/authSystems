@@ -87,11 +87,23 @@ Autenticazione a chiave pubblica tramite token hardware
 
 
 # 2 - COME RENDERE SICURA UNA API
-Comunicazione tra applicazione e infrastrutture eterogenee:come rendere sicura una API. A differenza del punto precedente questa soluzione prevede un progetto pratico di sviluppo di una applicazione delle tecniche da studiare.
+Comunicazione tra applicazione e infrastrutture eterogenee: come rendere sicura una API. A differenza del punto precedente questa soluzione prevede un progetto pratico di sviluppo di una applicazione delle tecniche da studiare.
 
 Cercare e documentare le principali alternative di autenticazione (JWT, OAUTH, SAML).
 
 ## SVOLGIMENTO
+### introduzione
+Quando una applicazione deve comunicare con infrastrutture eterogenee signidica che parla con sistemi diversi tra loro: server, database ecc...
+Per farli dialogare si usano spesso le API, cioe' punti di accesso che permettono a un software di chiedere dati o servizi a un altro software.
+
+Per rendere sicura una API bisogna proteggere sia il canale sia chi ci accede. Si usa una connessione cifrata (HTTPS) per evitare che i dati possano essere letti luno il percorso. Poi si verifica l'identita' di chi chiama l'API tramite chiavi, token o altri meccanismi di autenticazione.
+
+Perchè questa comunicazione avvenga in modo sicuro bisogna quindi che sia cifrata, controllata e limitata.
+
+### JWT
+### OAuth 2.0
+### SAML 2.0
+
 
 ### Fonti
 - https://www.kelltontech.com/kellton-tech-blog/api-security-design-patterns
