@@ -1,4 +1,3 @@
-// src/middleware/authJWE.js
 const TokenUtils = require('../utils/tokenUtils');
 
 async function authJWE(req, res, next) {
@@ -9,8 +8,13 @@ async function authJWE(req, res, next) {
     const token = authHeader.split(' ')[1];
     if (!token) return res.status(401).json({ error: 'Token mancante' });
 
-    const payload = await TokenUtils.decryptJWE(token); // decifra JWE
+    console.log('AuthHeader:', authHeader);
+    console.log('Token estratto:', token);
+
+    // Usa il metodo corretto dal TokenUtils
+    const payload = await TokenUtils.verifyJWE(token); 
     req.user = payload;
+
     next();
   } catch (error) {
     console.error('JWE auth error:', error);
