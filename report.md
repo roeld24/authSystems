@@ -56,7 +56,22 @@ Il server invia un codice temporaneo via SMS al numero registrato dall'utente
   - Serve un contratto con un provider SMS affifabile
   - Tecnologia a rischio di futura migrazione
   - Problemi di roaming o mancata consegna possono portare a costi operativi di assistenza
+
 ### Mobile ID
+L'utente conferma il login su uno smartphone registrato usando una app o un elemento SIM-based sicuro
+
+![mobileIDDiagram](./img/mobileIDDiagram.png)
+
+- Vantaggi
+  - Ridotti costi di assistenza grazie all'app
+  - Servizio centralizzato in grado di gestire migliaia di utenti
+
+- Svantaggi
+  - Bisogna interfacciarsi con un provider esterno
+  - Possibili costi di licenza per utente
+  - Mantenere compatibilita' iOS/Android
+  - Manutenzione e aggiornamento dell'app
+
 ### FIDO2
 
 
