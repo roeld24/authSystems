@@ -14,6 +14,7 @@ app.use(express.json());
 testConnection();
 
 app.get('/', (req, res) => {
+
     res.json({
         message: 'API JWT/JWS/JWE/JWK funzionante!',
         endpoints: {
@@ -34,3 +35,6 @@ app.use('/api/protected', protectedRoutes);
 app.listen(PORT, () => {
     console.log(`Server listening on port:${PORT}...`);
 });
+
+console.log('JWT_REFRESH_EXPIRES_IN:', process.env.JWT_REFRESH_EXPIRES_IN);
+

@@ -5,8 +5,8 @@ module.exports = {
     // JWT Symmetric (HS256)
     secret: process.env.JWT_SECRET,
     refreshSecret: process.env.JWT_REFRESH_SECRET,
-    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+    expiresIn: process.env.JWT_EXPIRES_IN || '5s',
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '10s',
 
     // JWT Asymmetric (RS256) - JWS
     privateKey: fs.readFileSync(
