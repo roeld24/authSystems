@@ -3,175 +3,141 @@ const User = require('../models/user.model');
 const TokenUtils = require('../utils/tokenUtils');
 
 class AuthController {
-  // ===== REGISTRAZIONE =====
-  static async register(req, res) {
-    try {
-      const { username, email, password } = req.body;
+    static async register(req, res) {
+        try {
+            const { username, email, password } = req.body;
+            if (!username || !email || !password) {
+                return res.status(400).json({
+                    error: 'Username, email and password are mandatory'
+                });
+            }
+            const existingUser = await User.findByEmail(email);
+            if (existingUser) {
+                return res.status(409).json({
+                    error: 'Email already in use'
+                });
+            }
+            const existingUsername = await User.findByUsername(username);
+            if (existingUsername) {
+                return res.status(409).json({
+                    error: 'Username already in use'
+                });
+            }
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const userId = await User.create(username, email, hashedPassword);
+            res.status(201).json({
+                message: 'User registered successfully',
+                userId
+            });
 
-      // Validazione base
-      if (!username || !email || !password) {
-        return res.status(400).json({ 
-          error: 'Username, email e password sono obbligatori' 
-        });
-      }
-
-      // Controlla se utente esiste già
-      const existingUser = await User.findByEmail(email);
-      if (existingUser) {
-        return res.status(409).json({ 
-          error: 'Email già registrata' 
-        });
-      }
-
-      const existingUsername = await User.findByUsername(username);
-      if (existingUsername) {
-        return res.status(409).json({ 
-          error: 'Username già in uso' 
-        });
-      }
-
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Crea utente
-      const userId = await User.create(username, email, hashedPassword);
-
-      res.status(201).json({
-        message: 'Utente registrato con successo',
-        userId
-      });
-
-    } catch (error) {
-      console.error('Errore registrazione:', error);
-      res.status(500).json({ error: 'Errore durante la registrazione' });
-    }
-  }
-
-  // ===== LOGIN CON TUTTI I TIPI DI TOKEN =====
-  static async login(req, res) {
-    try {
-      const { email, password } = req.body;
-
-      // Validazione
-      if (!email || !password) {
-        return res.status(400).json({ 
-          error: 'Email e password sono obbligatori' 
-        });
-      }
-
-      // Trova utente
-      const user = await User.findByEmail(email);
-      if (!user) {
-        return res.status(401).json({ 
-          error: 'Credenziali non valide' 
-        });
-      }
-
-      // Verifica password
-
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      if (!isValidPassword) {
-        return res.status(401).json({ 
-          error: 'Credenziali non valide' 
-        });
-      }
-
-      // Payload per i token
-      const payload = {
-        userId: user.id,
-        username: user.username,
-        email: user.email
-      };
-
-      // Genera TUTTI i tipi di token
-      const jwt = TokenUtils.generateJWT(payload);
-      const jws = await TokenUtils.generateJWS(payload);
-      const jwe = await TokenUtils.generateJWE(payload);
-      const refreshToken = TokenUtils.generateRefreshToken({ userId: user.id });
-
-      res.json({
-        message: 'Login effettuato con successo',
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email
-        },
-        tokens: {
-          jwt: jwt,           // Token standard (HS256)
-          jws: jws,           // Token firmato asimmetricamente (RS256)
-          jwe: jwe,           // Token cifrato
-          refreshToken: refreshToken
-        },
-        tokenInfo: {
-          jwt: 'Token standard con firma simmetrica (HS256)',
-          jws: 'Token con firma asimmetrica (RS256) - più sicuro',
-          jwe: 'Token cifrato - payload non leggibile',
-          refreshToken: 'Token per rinnovare l\'accesso'
+        } catch (error) {
+            console.error('Registration error:', error);
+            res.status(500).json({ error: 'Error while registering' });
         }
-      });
-
-    } catch (error) {
-      console.error('Errore login:', error);
-      res.status(500).json({ error: 'Errore durante il login' });
     }
-  }
 
-  // ===== REFRESH TOKEN =====
-  static async refresh(req, res) {
-    try {
-      const { refreshToken } = req.body;
+    static async login(req, res) {
+        try {
+            const { email, password } = req.body;
 
-      if (!refreshToken) {
-        return res.status(400).json({ error: 'Refresh token mancante' });
-      }
+            if (!email || !password) {
+                return res.status(400).json({
+                    error: 'Email and password are mandatory'
+                });
+            }
+            const user = await User.findByEmail(email);
+            if (!user) {
+                return res.status(401).json({
+                    error: 'Credentials not valid'
+                });
+            }
+            const isValidPassword = await bcrypt.compare(password, user.password);
+            if (!isValidPassword) {
+                return res.status(401).json({
+                    error: 'Credentials not valid'
+                });
+            }
+            const payload = {
+                userId: user.id,
+                username: user.username,
+                email: user.email
+            };
+            const jwt = TokenUtils.generateJWT(payload);
+            const jws = await TokenUtils.generateJWS(payload);
+            const jwe = await TokenUtils.generateJWE(payload);
+            const refreshToken = TokenUtils.generateRefreshToken({ userId: user.id });
+            res.json({
+                message: 'Login successful',
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email
+                },
+                tokens: {
+                    jwt: jwt,           // Standard Token (HS256)
+                    jws: jws,           // Token w/ Asymmetric Signature (RS256)
+                    jwe: jwe,           // Encrypted Token
+                    refreshToken: refreshToken
+                },
+                tokenInfo: {
+                    jwt: 'Standard Token, with symmetric signature (HS256)',
+                    jws: 'Token with asymmetric signature (RS256) - more secure',
+                    jwe: 'Encrypted Token - Unreadable payload',
+                    refreshToken: 'Long-lived token to obtain new tokens'
+                }
+            });
 
-      // Verifica refresh token
-      const decoded = TokenUtils.verifyRefreshToken(refreshToken);
-
-      // Trova utente
-      const user = await User.findById(decoded.userId);
-      if (!user) {
-        return res.status(404).json({ error: 'Utente non trovato' });
-      }
-
-      // Genera nuovi token
-      const payload = {
-        userId: user.id,
-        username: user.username,
-        email: user.email
-      };
-
-      const newJwt = TokenUtils.generateJWT(payload);
-      const newJws = await TokenUtils.generateJWS(payload);
-      const newJwe = await TokenUtils.generateJWE(payload);
-
-      res.json({
-        message: 'Token rinnovati',
-        tokens: {
-          jwt: newJwt,
-          jws: newJws,
-          jwe: newJwe
+        } catch (error) {
+            console.error('Errore login:', error);
+            res.status(500).json({ error: 'Login error' });
         }
-      });
-
-    } catch (error) {
-      console.error('Errore refresh:', error);
-      res.status(401).json({ error: 'Refresh token non valido' });
     }
-  }
 
-  // ===== JWK ENDPOINT (per chiave pubblica) =====
-  static async getJWK(req, res) {
-    try {
-      const jwk = await TokenUtils.getPublicJWK();
-      res.json({
-        keys: [jwk]
-      });
-    } catch (error) {
-      console.error('Errore JWK:', error);
-      res.status(500).json({ error: 'Errore nel recupero JWK' });
+    static async refresh(req, res) {
+        try {
+            const { refreshToken } = req.body;
+
+            if (!refreshToken) {
+                return res.status(400).json({ error: 'Missing refresh token' });
+            }
+            const decoded = TokenUtils.verifyRefreshToken(refreshToken);
+            const user = await User.findById(decoded.userId);
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            const payload = {
+                userId: user.id,
+                username: user.username,
+                email: user.email
+            };
+            const newJwt = TokenUtils.generateJWT(payload);
+            const newJws = await TokenUtils.generateJWS(payload);
+            const newJwe = await TokenUtils.generateJWE(payload);
+            res.json({
+                message: 'Renewed tokens...',
+                tokens: {
+                    jwt: newJwt,
+                    jws: newJws,
+                    jwe: newJwe
+                }
+            });
+
+        } catch (error) {
+            console.error('Refresh error:', error);
+            res.status(401).json({ error: 'Refresh token not valid' });
+        }
     }
-  }
+    static async getJWK(req, res) {
+        try {
+            const jwk = await TokenUtils.getPublicJWK();
+            res.json({
+                keys: [jwk]
+            });
+        } catch (error) {
+            console.error('JWK error:', error);
+            res.status(500).json({ error: 'Errore in JWK recovery' });
+        }
+    }
 }
 
 module.exports = AuthController;

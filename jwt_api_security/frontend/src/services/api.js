@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
 
-// Crea istanza axios
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -10,6 +9,7 @@ const api = axios.create({
   }
 });
 
+<<<<<<< HEAD
 // Store per il refresh token e callback
 let refreshTokenValue = null;
 let onTokenRefreshCallback = null;
@@ -81,6 +81,8 @@ api.interceptors.response.use(
 );
 
 // Auth APIs
+=======
+>>>>>>> 3be3a4f7db661db558ba6e1fa22c76954929d301
 export const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
   login: (credentials) => api.post('/auth/login', credentials),
@@ -88,7 +90,6 @@ export const authAPI = {
   getJWK: () => api.get('/auth/jwk')
 };
 
-// Protected APIs
 export const protectedAPI = {
   getJWTProtected: (token) => 
     api.get('/protected/jwt-protected', {
