@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { protectedAPI } from '../services/api';
+import { protectedAPI, authAPI } from '../services/api';
 import TokenInspector from './TokenInspector';
 
 function Dashboard() {
-  const { user, tokens } = useAuth();
+  const { user, tokens, updateTokens } = useAuth();
   const [responses, setResponses] = useState({
     jwt: null,
     jws: null,
@@ -16,6 +16,15 @@ function Dashboard() {
     jwe: null
   });
   const [loading, setLoading] = useState({
+    jwt: false,
+    jws: false,
+    jwe: false,
+    refresh: false
+  });
+  const [refreshMessage, setRefreshMessage] = useState(null);
+  
+  // Stato per mantenere la decodifica visibile
+  const [tokenDecodedStates, setTokenDecodedStates] = useState({
     jwt: false,
     jws: false,
     jwe: false
@@ -54,11 +63,71 @@ function Dashboard() {
     }
   };
 
+  const handleManualRefresh = async () => {
+    setLoading({ ...loading, refresh: true });
+    setRefreshMessage(null);
+
+    try {
+      console.log('🔄 Refresh manuale dei token...');
+      
+      const response = await authAPI.refresh(tokens.refreshToken);
+      const newTokens = response.data.tokens;
+      
+      // Aggiorna i token nel context
+      updateTokens(newTokens);
+      
+      setRefreshMessage({
+        type: 'success',
+        text: '✅ Tutti i token sono stati refreshati con successo!'
+      });
+      
+      console.log('✅ Token refreshati manualmente!');
+    } catch (err) {
+      setRefreshMessage({
+        type: 'error',
+        text: '❌ Errore durante il refresh: ' + (err.response?.data?.error || err.message)
+      });
+      console.error('❌ Errore refresh manuale:', err);
+    } finally {
+      setLoading({ ...loading, refresh: false });
+    }
+  };
+
+  const handleTokenDecodedChange = (type, isDecoded) => {
+    setTokenDecodedStates(prev => ({
+      ...prev,
+      [type]: isDecoded
+    }));
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.content}>
         <h2>Dashboard</h2>
         <p>Benvenuto, <strong>{user?.username}</strong>!</p>
+
+        {/* Refresh Manual Button Section */}
+        <div style={styles.refreshSection}>
+          <h3>🔄 Refresh Token Manuale</h3>
+          <p style={styles.info}>
+            Clicca per rinnovare tutti i token (JWT, JWS, JWE) usando il refresh token.
+            Il refresh automatico avviene anche quando i token scadono durante una richiesta.
+          </p>
+          
+          <button 
+            onClick={handleManualRefresh}
+            disabled={loading.refresh}
+            style={styles.refreshButton}
+          >
+            {loading.refresh ? '🔄 Refreshing...' : '🔄 Refresh Tutti i Token'}
+          </button>
+
+          {refreshMessage && (
+            <div style={refreshMessage.type === 'success' ? styles.success : styles.error}>
+              {refreshMessage.text}
+            </div>
+          )}
+        </div>
 
         {/* Token Inspector Section */}
         <div style={styles.section}>
@@ -68,9 +137,30 @@ function Dashboard() {
             Puoi decodificarli per vedere il payload (tranne JWE che è cifrato).
           </p>
 
-          {tokens.jwt && <TokenInspector token={tokens.jwt} type="JWT" />}
-          {tokens.jws && <TokenInspector token={tokens.jws} type="JWS" />}
-          {tokens.jwe && <TokenInspector token={tokens.jwe} type="JWE" />}
+          {tokens.jwt && (
+            <TokenInspector 
+              token={tokens.jwt} 
+              type="JWT" 
+              keepDecoded={tokenDecodedStates.jwt}
+              onDecodedChange={(isDecoded) => handleTokenDecodedChange('jwt', isDecoded)}
+            />
+          )}
+          {tokens.jws && (
+            <TokenInspector 
+              token={tokens.jws} 
+              type="JWS"
+              keepDecoded={tokenDecodedStates.jws}
+              onDecodedChange={(isDecoded) => handleTokenDecodedChange('jws', isDecoded)}
+            />
+          )}
+          {tokens.jwe && (
+            <TokenInspector 
+              token={tokens.jwe} 
+              type="JWE"
+              keepDecoded={tokenDecodedStates.jwe}
+              onDecodedChange={(isDecoded) => handleTokenDecodedChange('jwe', isDecoded)}
+            />
+          )}
         </div>
 
         {/* Protected Endpoints Section */}
@@ -78,6 +168,7 @@ function Dashboard() {
           <h3>🔒 Test Endpoint Protetti</h3>
           <p style={styles.info}>
             Ogni bottone testa un endpoint protetto usando un tipo diverso di token.
+            Se il token è scaduto, verrà automaticamente refreshato.
           </p>
 
           {/* JWT Test */}
@@ -205,6 +296,26 @@ const styles = {
   content: {
     maxWidth: '1200px',
     margin: '0 auto'
+  },
+  refreshSection: {
+    backgroundColor: '#fff3cd',
+    padding: '2rem',
+    borderRadius: '8px',
+    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+    marginBottom: '2rem',
+    border: '2px solid #ffc107'
+  },
+  refreshButton: {
+    padding: '1rem 2rem',
+    backgroundColor: '#ffc107',
+    color: '#000',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    fontSize: '1rem',
+    width: '100%',
+    marginTop: '1rem'
   },
   section: {
     backgroundColor: 'white',
