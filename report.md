@@ -1,33 +1,36 @@
 # 0 - REPORT SUL PROGETTO DI SISTEMI DI AUTENTICAZIONE
+
 Oggigiorno la quasi totalità delle soluzioni IT si basano su architetture web.
-Nella maggior parte dei casi tali soluzioni prevedono l’autenticazione di utenti su
-un Front-End di presentazione che interagisce con un sistema Back-End sul
-quale sono memorizzati database e procedure/algoritmi.
 
-Nel corso di questo progetto verranno applicate le tecnologie di autenticazione e
-di identificazione in due ambiti:
+Nella maggior parte dei casi tali soluzioni prevedono l’autenticazione di utenti su un Front-End di presentazione che
+interagisce con un sistema Back-End sul quale sono memorizzati database e procedure/algoritmi.
 
-- un piccolo progetto dimostrativo dei sistemi di autenticazione di utenti a
-diversi livelli (password, multi-factor authentication);
-- un piccolo progetto che mostri l’applicazione dei sistemi di autenticazione
-per rendere sicure le API (Application Programmin Interface).
+Nel corso di questo progetto verranno applicate le tecnologie di autenticazione e di identificazione in due ambiti:
+
+- un piccolo progetto dimostrativo dei sistemi di autenticazione di utenti a diversi livelli (password, multi-factor 
+authentication);
+- un piccolo progetto che mostri l’applicazione dei sistemi di autenticazione per rendere sicure le API (Application
+Programming Interface).
 
 Particolari aspetti da considerare valutando i rischi delle diverse architetture:
+
 - Quali informazioni vengono utilizate
 - Dove vengono salvate queste informazioni (file sul Back-End, file sul Front-End, cookies, tokens, …).
 - Quali verifiche vengono effettuate e a quale stadio di autenticazione
 
 Note (TODO):
-- Produrre un elenco di tutti i pacchetti software ed ev. librerie utilizzati per il
-progetto.
-- Documentarsi su eventuali vulnerabilità di tali soluzioni e sugli effetti/impatti che
-quete potrebbero comportare.
-- Documentarsi sul tipo di licenze legate ai pacchetti identificati e a come siano
-regolate le responsabilità nell'uso degli stessi.
+
+- Produrre un elenco di tutti i pacchetti software ed ev. librerie utilizzati per il progetto.
+- Documentarsi su eventuali vulnerabilità di tali soluzioni e sugli effetti/impatti che quete potrebbero comportare.
+- Documentarsi sul tipo di licenze legate ai pacchetti identificati e a come siano regolate le responsabilità nell'uso 
+degli stessi.
 - Preparare un Deployment Plan che documenti le istruzioni per preparare una potenziale dimostrazione in laboratorio.
  
 # 1 - MULTI-FACTOR AUTHENTICATION
-Studiare casi distinti d'applicazione per autenticazione di utenti che fanno uso di multi-factor authentication quali ad esempio:
+
+Studiare casi distinti d'applicazione per autenticazione di utenti che fanno uso di multi-factor authentication quali 
+ad esempio:
+
 - architettura PostFinance Mobile ID
 - un'architettura che faccia uso di autenticazione mTAN
 - un'architettura Photo-TAN
@@ -38,73 +41,90 @@ Descrivere il flusso di informazione di queste architetture nelle fasi di user a
 Spiegare vantaggi e svantaggi a livello di costi di implementazione di architetture del genere
 
 ## SVOLGIMENTO
+
 Metodi:
 - mTAN (SMS-TAN)
 - Mobile ID
 - FIDO2/WebAuthn con chiave hardware
 
 ### mTAN
+
 Il server invia un codice temporaneo via SMS al numero registrato dall'utente
 
 ![mTANdiagram](./img/mTAN_diagram.png)
 
-- Vantaggi 
+#### Vantaggi 
+
   - L'SMS gateway è relativamente economico (0.50 - 0.70 centesimi a SMS)
   - Non serve sviluppare una app dedicata
   
-- Svantaggi
+#### Svantaggi
+
   - Serve un contratto con un provider SMS affifabile
   - Tecnologia a rischio di futura migrazione
   - Problemi di roaming o mancata consegna possono portare a costi operativi di assistenza
 
 ### Mobile ID
+
 L'utente conferma il login su uno smartphone registrato usando una app o un elemento SIM-based sicuro
 
 ![mobileIDDiagram](./img/mobileIDDiagram.png)
 
-- Vantaggi
+#### Vantaggi
+
   - Ridotti costi di assistenza grazie all'app
   - Servizio centralizzato in grado di gestire migliaia di utenti
 
-- Svantaggi
+#### Svantaggi
+
   - Bisogna interfacciarsi con un provider esterno
   - Possibili costi di licenza per utente
-  - Mantenere compatibilita' iOS/Android
+  - Mantenere compatibilità iOS/Android
   - Manutenzione e aggiornamento dell'app
 
 ### FIDO2
+
 Autenticazione a chiave pubblica tramite token hardware
 
 ![Fido2Diagram](./img/Fido2Diagram.png)
 
-- Vantaggi
+#### Vantaggi
+
   - Non esistono costi relativi a SMS o applicazioni
   - Sicurezza altissima, riduce i costi di incident response
-- Svantaggi
+
+#### Svantaggi
+
   - Un token hardware puo' costare dai 20 ai 60 euro a persona
   - Distribuzione e gestione fisica delle chiavi agli utenti
   - Supporto nel caso di smarrimento o rottura delle chiavi
 
 
 # 2 - COME RENDERE SICURA UNA API
-Comunicazione tra applicazione e infrastrutture eterogenee: come rendere sicura una API. A differenza del punto precedente questa soluzione prevede un progetto pratico di sviluppo di una applicazione delle tecniche da studiare.
+
+Comunicazione tra applicazione e infrastrutture eterogenee: come rendere sicura una API. A differenza del punto 
+precedente questa soluzione prevede un progetto pratico di sviluppo di una applicazione delle tecniche da studiare.
 
 Cercare e documentare le principali alternative di autenticazione (JWT, OAUTH, SAML).
 
 ## SVOLGIMENTO
-### introduzione
+
+### Introduzione
+
 Quando una applicazione deve comunicare con infrastrutture eterogenee signidica che parla con sistemi diversi tra loro: server, database ecc...
-Per farli dialogare si usano spesso le API, cioe' punti di accesso che permettono a un software di chiedere dati o servizi a un altro software.
+Per farli dialogare si usano spesso le API, cioé punti di accesso che permettono a un software di chiedere dati o servizi a un altro software.
 
-Per rendere sicura una API bisogna proteggere sia il canale sia chi ci accede. Si usa una connessione cifrata (HTTPS) per evitare che i dati possano essere letti luno il percorso. Poi si verifica l'identita' di chi chiama l'API tramite chiavi, token o altri meccanismi di autenticazione. La protezione di una API passa da due pilastri principali:
+Per rendere sicura una API bisogna proteggere sia il canale sia chi ci accede. Si usa una connessione cifrata (HTTPS) per evitare che i dati possano essere letti luno il percorso. Poi si verifica l'identità di chi chiama l'API tramite chiavi, token o altri meccanismi di autenticazione. La protezione di una API passa da due pilastri principali:
 
-- Autenticazione: verificare l'identita' del client
+- Autenticazione: verificare l'identità del client
 - Autorizzazione: definire cosa puo' fare quel client
 
 Perchè questa comunicazione avvenga in modo sicuro bisogna quindi che sia cifrata, controllata e limitata.
 
 ### JWT
-I JSON Web Token sono un modo standard per consegnare a una applicazione un pass digitale che prova identita' e cosa puoi fare. E' composto da tre parti:
+
+I JSON Web Token sono un modo standard per consegnare a una applicazione un pass digitale che prova identità e cosa puoi fare. È composto da tre parti:
+
 - Header: contiene informazioni su che tipo di token è e quale algoritmo è usato per firmarlo
 - Payload: contiene le "asserzioni", dati sull'utente o sull'applicazione quindi chi ha emesso il token, per chi è valido, quando scade ecc...
 - Signature: è la firma crittografica che impedisce a chiunque di modificare il token senza essere scoperto
@@ -113,16 +133,20 @@ Funzionamento
 
 ![JWTWorkingDiagram](./img/JWTWorkingDiagram.png)
 
-- Vantaggi
+#### Vantaggi
+
   - Leggero
   - Facile da leggere 
   - Supportato globalmente
 
-- Rischi
-  - Resta valido finche' non scade (se viene rubato nel periodo di funzionamento puo' essere usato)
+#### Rischi
+
+  - Resta valido finché non scade (se viene rubato nel periodo di funzionamento puo' essere usato)
 
 ### OAuth 2.0
-E' un sistema che permette a una applicazione di accedere a certe informazioni di un utente senza chiedere la sua password. E' lo standard utilizzato da Google, Facebook e altri servizi per far dialogiare app diverse in sicurezza. 
+
+È un sistema che permette a una applicazione di accedere a certe informazioni di un utente senza chiedere la sua password.
+È lo standard utilizzato da Google, Facebook e altri servizi per far dialogiare app diverse in sicurezza. 
 
 Ci sono quattro ruoli principali: 
 - Resource Owner: l'utente proprietario dei dati
@@ -140,58 +164,126 @@ Flusso Authorization Code
   - I token possono avere durata breve ed essere rinnovati
   
 - Svantaggi
-  - Architettura complessa che puo' portare a vulnerabilita' in caso di sbagli 
+  - Architettura complessa che puo' portare a vulnerabilità in caso di sbagli 
   - token e permessi vanno gestiti correttamente
 
 ### SAML 2.0
-E' un protocollo pensato per permettere il Single Sign-ON (SSO) tra applicazioni diverse. Permette quindi a un utente di autenticarsi una volta sola e poi accedere a piu' servizi senza dover reinserirre la password ogni volta, servizio ampiamente utilizzato in ambiti di aziende o universitari.
 
-Come per il JWT funziona tramite asserzioni e ognuna di esse ha un identificativo unico e una validita' temporale, cosi' che non possa essere riutilizzata indebitamente.
+È un protocollo pensato per permettere il Single Sign-ON (SSO) tra applicazioni diverse. Permette quindi a un utente di
+autenticarsi una volta sola e poi accedere a più servizi senza dover reinserirre la password ogni volta, servizio
+ampiamente utilizzato in ambiti di aziende o universitari.
+
+Come per il JWT funziona tramite asserzioni e ognuna di esse ha un identificativo unico e una validità temporale, così
+che non possa essere riutilizzata indebitamente.
 
 Funzionamento
 
 ![SamlWorkingDiagram](./img/SamlWorkingDiagram.png)
 
-- Vantaggi
-  - Perfetto per ecosistemi corporate con piu' applicazioni
-  - Ideale per identita' centralizzate
+#### Vantaggi
+
+  - Perfetto per ecosistemi corporate con più applicazioni
+  - Ideale per identità centralizzate
   
-- Svantaggi
+#### Svantaggi
+
   - Usa XML che puo' risultare verboso
   - Implementazione complessa
   - Non è pensato per API REST moderne
 
 ### Fonti
+
 - https://www.kelltontech.com/kellton-tech-blog/api-security-design-patterns
 
-
-
 # 4 - OAUTH2
+
 Studiare il framework di autorizzazione OAUTH2 e spiegare le differenze con JWT. 
 
 ## SVOLGIMENTO
-OAuth 2.0 è un sistema che permette a un'applicazione di accedere a dati o servizi senza chiedere direttamente la password all'utente. Separa chi chiede l'accesso da chi possiede i dati, affidando il controllo a un server speciale chiamato Authorization Server. Nel punto 2 sono gia' stati definiti i 4 ruoli principali (vedi il [punto 2](#oauth-20)).
+
+OAuth 2.0 è un sistema che permette a un'applicazione di accedere a dati o servizi senza chiedere direttamente la
+password all'utente. Separa chi chiede l'accesso da chi possiede i dati, affidando il controllo a un server speciale
+chiamato Authorization Server. Nel punto 2 sono già stati definiti i 4 ruoli principali (vedi il [punto 2](#oauth-20)).
 
 Modi per ottenere un token:
+
 - Authorization Code Flow: usato da app web e mobile. L'utente si autentica, l'app riceve un codice da scambiare con un token
-- Implicit Flow: piu' vecchio, per app browser
+- Implicit Flow: più vecchio, per app browser
 - Client credentials flow: per server-to-server, senza utente
 - Resource Owner Password Flow: l'app riceve direttamente username e password
 
 OAuth non obbliga un formato specifico di token ma sono spesso JWT.
 
 Differenze Principali tra JWT e OAuth 2.0:
+
 - OAuth  dice chi puo' fare cosa e come, mentre JWT è il formato sicuro che puo' contenere queste informazioni
 - JWT è un token che trasporta informazioni sicure
 - OAuth è un framework che spiega come ottenere e usare i token. Gestisce permessi, durata e accesso delegato tra app e utenti
 
 ### Fonti
+
 - https://auth0.com/docs/authorization/protocols/protocol-oauth2
 - https://auth0.com/docs/authorization/flows/call-your-api-using-the-authorization-code-flow
 
 # 5 - RISCHI E CONTROMISURE
-Per i sistemi JWT usati in questa esercitazione teorica e di laboratorio, quali rischi per la privacy si possono identificare?
 
-Sarebbe possibile implementare una contromisura che garantisca una migliore privacy?
+Per i sistemi JWT (JSON Web Tokens) usati in questa esercitazione, l'analisi si concentra sulle vulnerabilità legate 
+alla privacy dei dati contenuti nel token stesso e sulle metodologie per mitigare tali rischi.
 
 ## SVOLGIMENTO
+
+Il rischio principale legato all'uso standard dei JWT (specificamente JWS - JSON Web Signature) risiede nella natura 
+della loro codifica.
+
+1. Leggibilità del Payload (Base64Url Encoding):
+
+> Un errore comune è confondere la firma digitale con la cifratura. Un JWT standard è codificato in Base64Url, non 
+> criptato. Questo significa che chiunque entri in possesso del token (intercettandolo via rete o accedendo allo storage
+> del browser) può decodificarlo banalmente e leggere tutto il contenuto del Payload.
+> Rischio: Se nel token vengono inserite PII (Personally Identifiable Information) come email, nome completo, codice 
+> fiscale o ruoli aziendali specifici, queste informazioni diventano visibili a terzi non autorizzati.
+
+2. Immutabilità e Persistenza: 
+
+> Poiché il token è "stateless" (contiene in sé le informazioni), una volta emesso non può essere facilmente modificato.
+> Se un dato sensibile contenuto nel token cambia (o se si vuole revocarne la visibilità), il vecchio token rimane
+> leggibile e valido fino alla sua scadenza naturale (exp), esponendo le vecchie informazioni.
+
+3. Storage lato Client: 
+
+> Se il JWT viene salvato nel LocalStorage del browser per comodità, è accessibile via JavaScript. In caso di 
+> vulnerabilità XSS (Cross-Site Scripting), un attaccante può leggere il token e profilarne l'utente estraendo le 
+> informazioni contenute nel payload.
+
+### Contromisure per garantire una migliore privacy
+
+Sì, è possibile implementare contromisure specifiche per garantire la privacy, agendo su due livelli: il contenuto del 
+token e la tecnologia di cifratura.
+
+#### Minimizzazione dei dati: 
+
+La prima difesa è architettonica. Il Payload del JWT non dovrebbe mai contenere dati sensibili.
+
+* Soluzione: Inserire nel token solo un identificativo opaco (es. User ID numerico o UUID) e i claim essenziali per
+l'autorizzazione (es. scope o role). Tutte le informazioni personali (nome, indirizzo, ecc.) dovrebbero rimanere nel 
+database e essere recuperate dal Backend solo quando necessario, usando l'ID del token come chiave di ricerca.
+
+#### JWE (JSON Web Encryption): 
+
+La contromisura tecnica più efficace per la privacy è passare dallo standard JWS (Signed) allo standard JWE (Encrypted).
+
+Mentre il JWS garantisce solo l'integrità (nessuno ha modificato i dati), il JWE garantisce la confidenzialità cifrando
+il contenuto del payload.
+
+*  Funzionamento: Il contenuto del token viene cifrato con una chiave simmetrica o asimmetrica. Solo il server che
+possiede la chiave privata di decifratura può leggere il contenuto del payload. Il client vede solo una stringa
+incomprensibile.
+
+#### Pattern "Phantom Token"
+
+Per un livello di sicurezza ancora maggiore, si può disaccoppiare il token pubblico da quello privato:
+
+* Frontend: Riceve un "Reference Token" (una stringa casuale opaca senza significato).
+* API Gateway: Intercetta il Reference Token, lo valida su un server di identità, e lo scambia con un vero JWT contenente
+i dati, che viene girato ai microservizi nel Backend.
+* Vantaggio: Il client (e Internet) non vedono mai il contenuto del JWT, garantendo massima privacy.
