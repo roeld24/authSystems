@@ -229,44 +229,44 @@ class Customer {
                 COUNT(DISTINCT c.CustomerId) as totalCustomers,
                 COUNT(DISTINCT c.Country) as totalCountries,
                 COUNT(DISTINCT i.InvoiceId) as totalInvoices,
-                COALESCE(SUM(i.Total), 0) as totalRevenue,
-                COALESCE(AVG(i.Total), 0) as avgInvoiceValue
+                CAST(COALESCE(SUM(i.Total), 0) AS FLOAT) as totalRevenue, -- Cast to Number
+                CAST(COALESCE(AVG(i.Total), 0) AS FLOAT) as avgInvoiceValue
             FROM Customer c
             LEFT JOIN Invoice i ON c.CustomerId = i.CustomerId
         `;
 
-        const params = [];
-
+        const params1 = [];
         if (employeeId) {
             query += ` WHERE c.SupportRepId = ?`;
-            params.push(employeeId);
+            params1.push(employeeId);
         }
 
-        const [stats] = await pool.query(query, params);
+        const [stats] = await pool.query(query, params1);
 
-        // Top customers
         let topCustomersQuery = `
             SELECT 
                 c.CustomerId as id,
                 CONCAT(c.FirstName, ' ', c.LastName) as name,
                 c.Email,
                 COUNT(i.InvoiceId) as invoiceCount,
-                COALESCE(SUM(i.Total), 0) as totalSpent
+                CAST(COALESCE(SUM(i.Total), 0) AS FLOAT) as totalSpent
             FROM Customer c
             LEFT JOIN Invoice i ON c.CustomerId = i.CustomerId
         `;
 
+        const params2 = [];
         if (employeeId) {
             topCustomersQuery += ` WHERE c.SupportRepId = ?`;
+            params2.push(employeeId);
         }
 
         topCustomersQuery += `
-            GROUP BY c.CustomerId
+            GROUP BY c.CustomerId, c.FirstName, c.LastName, c.Email -- Full Group By
             ORDER BY totalSpent DESC
             LIMIT 5
         `;
 
-        const [topCustomers] = await pool.query(topCustomersQuery, params);
+        const [topCustomers] = await pool.query(topCustomersQuery, params2);
 
         return {
             ...stats[0],
