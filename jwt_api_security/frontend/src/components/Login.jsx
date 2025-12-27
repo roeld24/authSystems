@@ -4,33 +4,32 @@ import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
 
 function Login() {
-    const navigate = useNavigate();
-    const { login } = useAuth();
-    const [formData, setFormData] = useState({
-        email: '',
-        password: ''
-    });
-    const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
 
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
 
-        try {
-            const response = await authAPI.login(formData);
-            login(response.data.user, response.data.tokens);
-            navigate('/dashboard');
-        } catch (err) {
-            setError(err.response?.data?.error || 'Login error');
-        }
-    };
+    try {
+      const response = await authAPI.login(formData);
+      // Assicurati che i nomi dei token siano corretti
+      const tokens = {
+        accessToken: response.data.tokens.accessToken,
+        refreshToken: response.data.tokens.refreshToken
+      };
+      login(response.data.user, tokens);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Login error');
+    }
+  };
 
     return (
         <div style={styles.container}>

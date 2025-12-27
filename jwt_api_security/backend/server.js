@@ -2,39 +2,54 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { testConnection } = require('./src/config/database');
+
+// Routes
 const authRoutes = require('./src/routes/auth.routes');
-const protectedRoutes = require('./src/routes/protected.routes');
+const customerRoutes = require('./src/routes/customer.routes');
+const auditRoutes = require('./src/routes/audit.routes'); // auditlog
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// Test DB connection
 testConnection();
 
+// Root route
 app.get('/', (req, res) => {
-
     res.json({
-        message: 'API JWT/JWS/JWE/JWK funzionante!',
+        message: 'API JWT funzionante!',
         endpoints: {
             register: 'POST /api/auth/register',
             login: 'POST /api/auth/login',
             refresh: 'POST /api/auth/refresh',
-            jwk: 'GET /api/auth/jwk',
-            jwtProtected: 'GET /api/protected/jwt-protected',
-            jwsProtected: 'GET /api/protected/jws-protected',
-            jweProtected: 'GET /api/protected/jwe-protected'
+            profile: 'GET /api/auth/profile',
+            changePassword: 'POST /api/auth/change-password',
+            customers: 'GET /api/customers',
+            auditLogs: 'GET /api/audit-logs'
         }
     });
 });
 
+// Auth routes
 app.use('/api/auth', authRoutes);
-app.use('/api/protected', protectedRoutes);
 
-app.listen(PORT, () => {
-    console.log(`Server listening on port:${PORT}...`);
+// Customer routes (protette da JWT e middleware di gestione)
+app.use('/api/customers', customerRoutes);
+
+// Audit log routes (solo manager)
+app.use('/api/audit-logs', auditRoutes);
+
+// Error handler (semplice)
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'Errore interno del server' });
 });
 
-console.log('JWT_REFRESH_EXPIRES_IN:', process.env.JWT_REFRESH_EXPIRES_IN);
-
+// Start server
+app.listen(PORT, () => {
+    console.log(`Server listening on port: ${PORT}`);
+});

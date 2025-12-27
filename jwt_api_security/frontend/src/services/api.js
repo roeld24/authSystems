@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
 
-// Crea istanza axios
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -10,11 +9,19 @@ const api = axios.create({
   }
 });
 
-// Store per il refresh token e callback
+// Store per refresh token e callback
 let refreshTokenValue = null;
 let onTokenRefreshCallback = null;
 
-// Configura il refresh token e la callback
+// Aggiorna header Authorization di default
+export const setAccessToken = (token) => {
+  if (token) {
+    api.defaults.headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers['Authorization'];
+  }
+};
+
 export const setRefreshToken = (token) => {
   refreshTokenValue = token;
 };
@@ -23,87 +30,55 @@ export const setOnTokenRefresh = (callback) => {
   onTokenRefreshCallback = callback;
 };
 
-// Interceptor per gestire errori 401 (token scaduto)
+// Interceptor per gestire 401 (token scaduto)
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-
-    // Se errore 401 e non è già un retry
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        console.log('🔄 Token scaduto, tentativo di refresh...');
-        
-        // Chiama il refresh
+        if (!refreshTokenValue) throw new Error('No refresh token available');
+
         const response = await axios.post(`${API_URL}/auth/refresh`, {
           refreshToken: refreshTokenValue
         });
 
         const newTokens = response.data.tokens;
-        
-        // Aggiorna i token tramite callback
-        if (onTokenRefreshCallback) {
-          onTokenRefreshCallback(newTokens);
-        }
 
-        // Determina quale token usare per la richiesta originale
-        let tokenToUse = newTokens.jwt; // default
-        
-        if (originalRequest.url.includes('jws-protected')) {
-          tokenToUse = newTokens.jws;
-        } else if (originalRequest.url.includes('jwe-protected')) {
-          tokenToUse = newTokens.jwe;
-        }
+        if (!newTokens?.accessToken) throw new Error('Refresh failed');
 
-        // Aggiorna l'header della richiesta originale
-        originalRequest.headers.Authorization = `Bearer ${tokenToUse}`;
+        // Chiama la callback per aggiornare il contesto
+        if (onTokenRefreshCallback) onTokenRefreshCallback(newTokens);
 
-        console.log('✅ Token refreshati con successo!');
-        
-        // Ritenta la richiesta originale
+        // Aggiorna header della richiesta originale
+        originalRequest.headers = {
+          ...originalRequest.headers,
+          Authorization: `Bearer ${newTokens.accessToken}`
+        };
+
         return api(originalRequest);
       } catch (refreshError) {
-        console.error('❌ Errore durante il refresh:', refreshError);
-        
-        // Se il refresh fallisce, logout
-        if (onTokenRefreshCallback) {
-          onTokenRefreshCallback(null); // Trigger logout
-        }
-        
+        if (onTokenRefreshCallback) onTokenRefreshCallback(null); // logout
         return Promise.reject(refreshError);
       }
     }
-
     return Promise.reject(error);
   }
 );
 
-// Auth APIs
+// Auth API
 export const authAPI = {
-  register: (userData) => api.post('/auth/register', userData),
   login: (credentials) => api.post('/auth/login', credentials),
   refresh: (refreshToken) => api.post('/auth/refresh', { refreshToken }),
   getJWK: () => api.get('/auth/jwk')
 };
 
-// Protected APIs
+// Protected API
 export const protectedAPI = {
-  getJWTProtected: (token) => 
-    api.get('/protected/jwt-protected', {
-      headers: { Authorization: `Bearer ${token}` }
-    }),
-  
-  getJWSProtected: (token) => 
-    api.get('/protected/jws-protected', {
-      headers: { Authorization: `Bearer ${token}` }
-    }),
-  
-  getJWEProtected: (token) => 
-    api.get('/protected/jwe-protected', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+  get: (url, options) => api.get(url, options),
+  post: (url, data, options) => api.post(url, data, options)
 };
 
 export default api;

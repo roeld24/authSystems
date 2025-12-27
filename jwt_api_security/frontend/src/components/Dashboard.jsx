@@ -1,382 +1,473 @@
-import React, { useState } from 'react';
+// src/components/Dashboard.js
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { protectedAPI, authAPI } from '../services/api';
-import TokenInspector from './TokenInspector';
+import { protectedAPI } from '../services/api';
+import { 
+    Users, 
+    DollarSign, 
+    FileText, 
+    TrendingUp, 
+    Globe,
+    Award,
+    AlertCircle,
+    RefreshCw
+} from 'lucide-react';
 
 function Dashboard() {
-  const { user, tokens, updateTokens } = useAuth();
-  const [responses, setResponses] = useState({
-    jwt: null,
-    jws: null,
-    jwe: null
-  });
-  const [errors, setErrors] = useState({
-    jwt: null,
-    jws: null,
-    jwe: null
-  });
-  const [loading, setLoading] = useState({
-    jwt: false,
-    jws: false,
-    jwe: false,
-    refresh: false
-  });
-  const [refreshMessage, setRefreshMessage] = useState(null);
-  
-  // Stato per mantenere la decodifica visibile
-  const [tokenDecodedStates, setTokenDecodedStates] = useState({
-    jwt: false,
-    jws: false,
-    jwe: false
-  });
+    const { user } = useAuth();
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-  const testEndpoint = async (type) => {
-    setLoading({ ...loading, [type]: true });
-    setErrors({ ...errors, [type]: null });
-    setResponses({ ...responses, [type]: null });
+    useEffect(() => {
+        loadStatistics();
+    }, []);
 
-    try {
-      let response;
-      
-      switch(type) {
-        case 'jwt':
-          response = await protectedAPI.getJWTProtected(tokens.jwt);
-          break;
-        case 'jws':
-          response = await protectedAPI.getJWSProtected(tokens.jws);
-          break;
-        case 'jwe':
-          response = await protectedAPI.getJWEProtected(tokens.jwe);
-          break;
-        default:
-          throw new Error('Tipo token non valido');
-      }
+    const loadStatistics = async () => {
+        try {
+            setLoading(true);
+            setError('');
+            const response = await protectedAPI.getStatistics();
+            setStats(response.data);
+        } catch (err) {
+            setError(err.response?.data?.error || 'Errore caricamento statistiche');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-      setResponses({ ...responses, [type]: response.data });
-    } catch (err) {
-      setErrors({ 
-        ...errors, 
-        [type]: err.response?.data?.error || 'Errore nella richiesta'
-      });
-    } finally {
-      setLoading({ ...loading, [type]: false });
+    if (loading) {
+        return (
+            <div style={styles.loadingContainer}>
+                <div style={styles.spinner}></div>
+                <p style={styles.loadingText}>Caricamento statistiche...</p>
+            </div>
+        );
     }
-  };
 
-  const handleManualRefresh = async () => {
-    setLoading({ ...loading, refresh: true });
-    setRefreshMessage(null);
-
-    try {
-      console.log('🔄 Refresh manuale dei token...');
-      
-      const response = await authAPI.refresh(tokens.refreshToken);
-      const newTokens = response.data.tokens;
-      
-      // Aggiorna i token nel context
-      updateTokens(newTokens);
-      
-      setRefreshMessage({
-        type: 'success',
-        text: '✅ Tutti i token sono stati refreshati con successo!'
-      });
-      
-      console.log('✅ Token refreshati manualmente!');
-    } catch (err) {
-      setRefreshMessage({
-        type: 'error',
-        text: '❌ Errore durante il refresh: ' + (err.response?.data?.error || err.message)
-      });
-      console.error('❌ Errore refresh manuale:', err);
-    } finally {
-      setLoading({ ...loading, refresh: false });
+    if (error) {
+        return (
+            <div style={styles.errorContainer}>
+                <AlertCircle size={48} color="#d32f2f" />
+                <h2 style={styles.errorTitle}>Errore</h2>
+                <p style={styles.errorText}>{error}</p>
+                <button onClick={loadStatistics} style={styles.retryButton}>
+                    <RefreshCw size={18} />
+                    Riprova
+                </button>
+            </div>
+        );
     }
-  };
 
-  const handleTokenDecodedChange = (type, isDecoded) => {
-    setTokenDecodedStates(prev => ({
-      ...prev,
-      [type]: isDecoded
-    }));
-  };
-
-  return (
-    <div style={styles.container}>
-      <div style={styles.content}>
-        <h2>Dashboard</h2>
-        <p>Benvenuto, <strong>{user?.username}</strong>!</p>
-
-        {/* Refresh Manual Button Section */}
-        <div style={styles.refreshSection}>
-          <h3>🔄 Refresh Token Manuale</h3>
-          <p style={styles.info}>
-            Clicca per rinnovare tutti i token (JWT, JWS, JWE) usando il refresh token.
-            Il refresh automatico avviene anche quando i token scadono durante una richiesta.
-          </p>
-          
-          <button 
-            onClick={handleManualRefresh}
-            disabled={loading.refresh}
-            style={styles.refreshButton}
-          >
-            {loading.refresh ? '🔄 Refreshing...' : '🔄 Refresh Tutti i Token'}
-          </button>
-
-          {refreshMessage && (
-            <div style={refreshMessage.type === 'success' ? styles.success : styles.error}>
-              {refreshMessage.text}
+    return (
+        <div style={styles.container}>
+            {/* Welcome Section */}
+            <div style={styles.welcomeSection}>
+                <div>
+                    <h1 style={styles.title}>
+                        Benvenuto, {user?.firstName}! 👋
+                    </h1>
+                    <p style={styles.subtitle}>
+                        {user?.isManager 
+                            ? 'Dashboard completa di tutti i clienti'
+                            : 'Dashboard dei tuoi clienti'}
+                    </p>
+                </div>
+                <div style={styles.badge}>
+                    {user?.isManager ? '👑 Manager' : '👤 Employee'}
+                </div>
             </div>
-          )}
-        </div>
 
-        {/* Token Inspector Section */}
-        <div style={styles.section}>
-          <h3>🔑 I Tuoi Token</h3>
-          <p style={styles.info}>
-            Dopo il login hai ricevuto 4 diversi tipi di token. 
-            Puoi decodificarli per vedere il payload (tranne JWE che è cifrato).
-          </p>
-
-          {tokens.jwt && (
-            <TokenInspector 
-              token={tokens.jwt} 
-              type="JWT" 
-              keepDecoded={tokenDecodedStates.jwt}
-              onDecodedChange={(isDecoded) => handleTokenDecodedChange('jwt', isDecoded)}
-            />
-          )}
-          {tokens.jws && (
-            <TokenInspector 
-              token={tokens.jws} 
-              type="JWS"
-              keepDecoded={tokenDecodedStates.jws}
-              onDecodedChange={(isDecoded) => handleTokenDecodedChange('jws', isDecoded)}
-            />
-          )}
-          {tokens.jwe && (
-            <TokenInspector 
-              token={tokens.jwe} 
-              type="JWE"
-              keepDecoded={tokenDecodedStates.jwe}
-              onDecodedChange={(isDecoded) => handleTokenDecodedChange('jwe', isDecoded)}
-            />
-          )}
-        </div>
-
-        {/* Protected Endpoints Section */}
-        <div style={styles.section}>
-          <h3>🔒 Test Endpoint Protetti</h3>
-          <p style={styles.info}>
-            Ogni bottone testa un endpoint protetto usando un tipo diverso di token.
-            Se il token è scaduto, verrà automaticamente refreshato.
-          </p>
-
-          {/* JWT Test */}
-          <div style={styles.testCard}>
-            <div style={styles.testHeader}>
-              <h4>JWT (HS256 - Symmetric)</h4>
-              <button 
-                onClick={() => testEndpoint('jwt')} 
-                disabled={loading.jwt}
-                style={styles.testButton}
-              >
-                {loading.jwt ? 'Caricamento...' : 'Test JWT Endpoint'}
-              </button>
+            {/* Stats Grid */}
+            <div style={styles.statsGrid}>
+                <StatCard
+                    icon={<Users size={28} />}
+                    label="Clienti Totali"
+                    value={stats?.totalCustomers || 0}
+                    color="#2196F3"
+                    bgColor="#e3f2fd"
+                />
+                <StatCard
+                    icon={<Globe size={28} />}
+                    label="Paesi"
+                    value={stats?.totalCountries || 0}
+                    color="#4CAF50"
+                    bgColor="#e8f5e9"
+                />
+                <StatCard
+                    icon={<FileText size={28} />}
+                    label="Fatture"
+                    value={stats?.totalInvoices || 0}
+                    color="#9C27B0"
+                    bgColor="#f3e5f5"
+                />
+                <StatCard
+                    icon={<DollarSign size={28} />}
+                    label="Fatturato Totale"
+                    value={`$${(stats?.totalRevenue || 0).toFixed(2)}`}
+                    color="#FF9800"
+                    bgColor="#fff3e0"
+                />
             </div>
-            
-            {errors.jwt && (
-              <div style={styles.error}>❌ {errors.jwt}</div>
-            )}
-            
-            {responses.jwt && (
-              <div style={styles.success}>
-                <strong>✅ Risposta:</strong>
-                <pre>{JSON.stringify(responses.jwt, null, 2)}</pre>
-              </div>
-            )}
-          </div>
 
-          {/* JWS Test */}
-          <div style={styles.testCard}>
-            <div style={styles.testHeader}>
-              <h4>JWS (RS256 - Asymmetric)</h4>
-              <button 
-                onClick={() => testEndpoint('jws')} 
-                disabled={loading.jws}
-                style={styles.testButton}
-              >
-                {loading.jws ? 'Caricamento...' : 'Test JWS Endpoint'}
-              </button>
-            </div>
-            
-            {errors.jws && (
-              <div style={styles.error}>❌ {errors.jws}</div>
-            )}
-            
-            {responses.jws && (
-              <div style={styles.success}>
-                <strong>✅ Risposta:</strong>
-                <pre>{JSON.stringify(responses.jws, null, 2)}</pre>
-              </div>
-            )}
-          </div>
-
-          {/* JWE Test */}
-          <div style={styles.testCard}>
-            <div style={styles.testHeader}>
-              <h4>JWE (A256GCM - Encrypted)</h4>
-              <button 
-                onClick={() => testEndpoint('jwe')} 
-                disabled={loading.jwe}
-                style={styles.testButton}
-              >
-                {loading.jwe ? 'Caricamento...' : 'Test JWE Endpoint'}
-              </button>
-            </div>
-            
-            {errors.jwe && (
-              <div style={styles.error}>❌ {errors.jwe}</div>
-            )}
-            
-            {responses.jwe && (
-              <div style={styles.success}>
-                <strong>✅ Risposta:</strong>
-                <pre>{JSON.stringify(responses.jwe, null, 2)}</pre>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Token Info Section */}
-        <div style={styles.section}>
-          <h3>ℹ️ Differenze tra i Token</h3>
-          <div style={styles.infoGrid}>
+            {/* Average Invoice */}
             <div style={styles.infoCard}>
-              <h4>JWT (HS256)</h4>
-              <ul>
-                <li>Firma simmetrica (stesso segreto)</li>
-                <li>Più veloce</li>
-                <li>Payload visibile (base64)</li>
-                <li>Usato per API interne</li>
-              </ul>
+                <TrendingUp size={24} color="#2196F3" />
+                <div>
+                    <p style={styles.infoLabel}>Valore Medio Fattura</p>
+                    <p style={styles.infoValue}>
+                        ${(stats?.avgInvoiceValue || 0).toFixed(2)}
+                    </p>
+                </div>
             </div>
 
-            <div style={styles.infoCard}>
-              <h4>JWS (RS256)</h4>
-              <ul>
-                <li>Firma asimmetrica (chiave pubblica/privata)</li>
-                <li>Più sicuro</li>
-                <li>Payload visibile</li>
-                <li>Usato per API pubbliche</li>
-              </ul>
-            </div>
+            {/* Top Customers */}
+            {stats?.topCustomers && stats.topCustomers.length > 0 && (
+                <div style={styles.topCustomersSection}>
+                    <div style={styles.sectionHeader}>
+                        <Award size={24} color="#FF9800" />
+                        <h2 style={styles.sectionTitle}>Top 5 Clienti</h2>
+                    </div>
 
-            <div style={styles.infoCard}>
-              <h4>JWE (A256GCM)</h4>
-              <ul>
-                <li>Payload cifrato</li>
-                <li>Massima sicurezza</li>
-                <li>Payload NON visibile</li>
-                <li>Usato per dati sensibili</li>
-              </ul>
+                    <div style={styles.customersList}>
+                        {stats.topCustomers.map((customer, index) => (
+                            <div key={customer.id} style={styles.customerCard}>
+                                <div style={styles.customerRank}>
+                                    <span style={{
+                                        ...styles.rankBadge,
+                                        backgroundColor: getRankColor(index)
+                                    }}>
+                                        #{index + 1}
+                                    </span>
+                                </div>
+
+                                <div style={styles.customerInfo}>
+                                    <p style={styles.customerName}>{customer.name}</p>
+                                    <p style={styles.customerEmail}>{customer.email}</p>
+                                </div>
+
+                                <div style={styles.customerStats}>
+                                    <div style={styles.statItem}>
+                                        <p style={styles.statLabel}>Fatture</p>
+                                        <p style={styles.statValue}>{customer.invoiceCount}</p>
+                                    </div>
+                                    <div style={styles.statItem}>
+                                        <p style={styles.statLabel}>Totale</p>
+                                        <p style={{
+                                            ...styles.statValue,
+                                            color: '#4CAF50',
+                                            fontWeight: 'bold'
+                                        }}>
+                                            ${customer.totalSpent.toFixed(2)}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Quick Actions */}
+            <div style={styles.quickActions}>
+                <h3 style={styles.quickActionsTitle}>Azioni Rapide</h3>
+                <div style={styles.actionsGrid}>
+                    <ActionButton
+                        icon={<Users size={20} />}
+                        label="Visualizza Clienti"
+                        onClick={() => window.location.href = '/customers'}
+                    />
+                    <ActionButton
+                        icon={<FileText size={20} />}
+                        label="Report"
+                        onClick={() => alert('Funzionalità in sviluppo')}
+                    />
+                    {user?.isManager && (
+                        <ActionButton
+                            icon={<Award size={20} />}
+                            label="Audit Logs"
+                            onClick={() => window.location.href = '/logs'}
+                        />
+                    )}
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
-  );
+    );
+}
+
+// Componente StatCard
+function StatCard({ icon, label, value, color, bgColor }) {
+    return (
+        <div style={styles.statCard}>
+            <div style={{ ...styles.statIcon, backgroundColor: bgColor, color }}>
+                {icon}
+            </div>
+            <div style={styles.statContent}>
+                <p style={styles.statLabel}>{label}</p>
+                <p style={styles.statValue}>{value}</p>
+            </div>
+        </div>
+    );
+}
+
+// Componente ActionButton
+function ActionButton({ icon, label, onClick }) {
+    return (
+        <button onClick={onClick} style={styles.actionButton}>
+            {icon}
+            <span>{label}</span>
+        </button>
+    );
+}
+
+// Helper per colore rank
+function getRankColor(index) {
+    const colors = ['#FFD700', '#C0C0C0', '#CD7F32', '#4CAF50', '#2196F3'];
+    return colors[index] || '#9E9E9E';
 }
 
 const styles = {
-  container: {
-    backgroundColor: '#f5f5f5',
-    minHeight: 'calc(100vh - 80px)',
-    padding: '2rem'
-  },
-  content: {
-    maxWidth: '1200px',
-    margin: '0 auto'
-  },
-  refreshSection: {
-    backgroundColor: '#fff3cd',
-    padding: '2rem',
-    borderRadius: '8px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-    marginBottom: '2rem',
-    border: '2px solid #ffc107'
-  },
-  refreshButton: {
-    padding: '1rem 2rem',
-    backgroundColor: '#ffc107',
-    color: '#000',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    fontSize: '1rem',
-    width: '100%',
-    marginTop: '1rem'
-  },
-  section: {
-    backgroundColor: 'white',
-    padding: '2rem',
-    borderRadius: '8px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-    marginBottom: '2rem'
-  },
-  info: {
-    color: '#666',
-    marginBottom: '1rem'
-  },
-  testCard: {
-    backgroundColor: '#f9f9f9',
-    padding: '1.5rem',
-    borderRadius: '8px',
-    marginBottom: '1rem',
-    border: '1px solid #ddd'
-  },
-  testHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '1rem'
-  },
-  testButton: {
-    padding: '0.75rem 1.5rem',
-    backgroundColor: '#61dafb',
-    color: '#282c34',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    fontSize: '0.9rem'
-  },
-  error: {
-    backgroundColor: '#ffebee',
-    color: '#c62828',
-    padding: '1rem',
-    borderRadius: '4px',
-    marginTop: '1rem'
-  },
-  success: {
-    backgroundColor: '#e8f5e9',
-    color: '#2e7d32',
-    padding: '1rem',
-    borderRadius: '4px',
-    marginTop: '1rem'
-  },
-  infoGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '1rem',
-    marginTop: '1rem'
-  },
-  infoCard: {
-    backgroundColor: '#f9f9f9',
-    padding: '1rem',
-    borderRadius: '8px',
-    border: '1px solid #ddd'
-  }
+    container: {
+        padding: '2rem',
+        maxWidth: '1400px',
+        margin: '0 auto',
+        minHeight: 'calc(100vh - 80px)',
+        backgroundColor: '#f5f5f5'
+    },
+    loadingContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 'calc(100vh - 80px)',
+        gap: '1rem'
+    },
+    spinner: {
+        width: '50px',
+        height: '50px',
+        border: '5px solid #e0e0e0',
+        borderTop: '5px solid #2196F3',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite'
+    },
+    loadingText: {
+        color: '#666',
+        fontSize: '1rem'
+    },
+    errorContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 'calc(100vh - 80px)',
+        gap: '1rem',
+        padding: '2rem'
+    },
+    errorTitle: {
+        color: '#d32f2f',
+        fontSize: '1.5rem',
+        margin: 0
+    },
+    errorText: {
+        color: '#666',
+        textAlign: 'center'
+    },
+    retryButton: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        padding: '0.75rem 1.5rem',
+        backgroundColor: '#2196F3',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontWeight: '500',
+        marginTop: '1rem'
+    },
+    welcomeSection: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '2rem',
+        backgroundColor: 'white',
+        padding: '2rem',
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+    },
+    title: {
+        fontSize: '2rem',
+        fontWeight: 'bold',
+        color: '#1a1a1a',
+        margin: '0 0 0.5rem 0'
+    },
+    subtitle: {
+        color: '#666',
+        fontSize: '1rem',
+        margin: 0
+    },
+    badge: {
+        padding: '0.75rem 1.5rem',
+        backgroundColor: '#e3f2fd',
+        color: '#2196F3',
+        borderRadius: '24px',
+        fontWeight: '600',
+        fontSize: '1rem'
+    },
+    statsGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+        gap: '1.5rem',
+        marginBottom: '2rem'
+    },
+    statCard: {
+        backgroundColor: 'white',
+        padding: '1.5rem',
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem'
+    },
+    statIcon: {
+        padding: '1rem',
+        borderRadius: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    statContent: {
+        flex: 1
+    },
+    statLabel: {
+        fontSize: '0.85rem',
+        color: '#666',
+        margin: '0 0 0.25rem 0'
+    },
+    statValue: {
+        fontSize: '1.75rem',
+        fontWeight: 'bold',
+        color: '#1a1a1a',
+        margin: 0
+    },
+    infoCard: {
+        backgroundColor: 'white',
+        padding: '1.5rem',
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        marginBottom: '2rem'
+    },
+    infoLabel: {
+        fontSize: '0.9rem',
+        color: '#666',
+        margin: '0 0 0.25rem 0'
+    },
+    infoValue: {
+        fontSize: '1.5rem',
+        fontWeight: 'bold',
+        color: '#2196F3',
+        margin: 0
+    },
+    topCustomersSection: {
+        backgroundColor: 'white',
+        padding: '2rem',
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        marginBottom: '2rem'
+    },
+    sectionHeader: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        marginBottom: '1.5rem'
+    },
+    sectionTitle: {
+        fontSize: '1.5rem',
+        fontWeight: 'bold',
+        color: '#1a1a1a',
+        margin: 0
+    },
+    customersList: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem'
+    },
+    customerCard: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        padding: '1rem',
+        backgroundColor: '#f5f5f5',
+        borderRadius: '8px'
+    },
+    customerRank: {
+        flex: '0 0 auto'
+    },
+    rankBadge: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: '0.9rem'
+    },
+    customerInfo: {
+        flex: 1
+    },
+    customerName: {
+        fontWeight: '600',
+        color: '#1a1a1a',
+        margin: '0 0 0.25rem 0'
+    },
+    customerEmail: {
+        fontSize: '0.85rem',
+        color: '#666',
+        margin: 0
+    },
+    customerStats: {
+        display: 'flex',
+        gap: '2rem'
+    },
+    statItem: {
+        textAlign: 'right'
+    },
+    quickActions: {
+        backgroundColor: 'white',
+        padding: '2rem',
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+    },
+    quickActionsTitle: {
+        fontSize: '1.25rem',
+        fontWeight: 'bold',
+        color: '#1a1a1a',
+        marginBottom: '1rem'
+    },
+    actionsGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '1rem'
+    },
+    actionButton: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem',
+        padding: '1rem',
+        backgroundColor: '#f5f5f5',
+        border: '2px solid #e0e0e0',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontWeight: '500',
+        color: '#555',
+        transition: 'all 0.2s'
+    }
 };
 
 export default Dashboard;

@@ -15,7 +15,6 @@ function Navbar() {
                 <div style={styles.links}>
                     {!isAuthenticated() ? (
                         <>
-                            <Link to="/register" style={styles.link}>Register</Link>
                             <Link to="/login" style={styles.link}>Login</Link>
                         </>
                     ) : (

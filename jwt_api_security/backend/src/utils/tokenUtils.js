@@ -1,100 +1,197 @@
+// src/utils/tokenUtils.js
 const jwt = require('jsonwebtoken');
-const { SignJWT, jwtVerify, EncryptJWT, jwtDecrypt, exportJWK } = require('jose');
-const crypto = require('crypto');
-const jwtConfig = require('../config/jwt.config');
+const { pool } = require('../config/database');
 
 class TokenUtils {
-    // JWT STANDARD (HS256 - Symmetric)
+    /**
+     * Genera JWT access token
+     */
     static generateJWT(payload) {
-        return jwt.sign(payload, jwtConfig.secret, {
-            expiresIn: jwtConfig.expiresIn,
-            algorithm: jwtConfig.algorithms.symmetric
+        return jwt.sign(payload, process.env.JWT_SECRET, {
+            expiresIn: '5m', // 5 minuti come da requisiti
+            algorithm: 'HS256'
         });
     }
 
+    /**
+     * Verifica JWT access token
+     */
     static verifyJWT(token) {
         try {
-            return jwt.verify(token, jwtConfig.secret);
+            return jwt.verify(token, process.env.JWT_SECRET);
         } catch (error) {
-            throw new Error('Invalid JWT token');
+            throw new Error('Token non valido o scaduto');
         }
     }
 
-    // JWS (RS256 - Asymmetric Signature)
-    static async generateJWS(payload) {
-        const privateKey = crypto.createPrivateKey(jwtConfig.privateKey);
-
-        const jws = await new SignJWT(payload)
-            .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
-            .setIssuedAt()
-            .setExpirationTime('15m')
-            .sign(privateKey);
-
-        return jws;
+    /**
+     * Genera refresh token (durata maggiore)
+     */
+    static generateRefreshToken(payload) {
+        return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
+            expiresIn: '7d', // 7 giorni
+            algorithm: 'HS256'
+        });
     }
 
-    static async verifyJWS(token) {
+    /**
+     * Verifica refresh token
+     */
+    static verifyRefreshToken(token) {
         try {
-            const publicKey = crypto.createPublicKey(jwtConfig.publicKey);
-            const { payload } = await jwtVerify(token, publicKey, {
-                algorithms: ['RS256']
-            });
-            return payload;
+            return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
         } catch (error) {
-            throw new Error('Invalid JWS token: ' + error.message);
+            throw new Error('Refresh token non valido');
         }
     }
 
-    // ===== 3. JWE (Encrypted JWT) =====
-    static async generateJWE(payload) {
-        const secret = new TextEncoder().encode(jwtConfig.jweSecret);
+    /**
+     * Salva refresh token nel database
+     */
+    static async saveRefreshToken(employeeId, token) {
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // 7 giorni
 
-        const jwe = await new EncryptJWT(payload)
-            .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
-            .setIssuedAt()
-            .setExpirationTime('15m')
-            .encrypt(secret);
-
-        return jwe;
+        await pool.query(
+            `INSERT INTO RefreshTokens (EmployeeId, Token, ExpiresAt) 
+            VALUES (?, ?, ?)`,
+            [employeeId, token, expiresAt]
+        );
     }
 
-    static async verifyJWE(token) {
-        try {
-            const secret = new TextEncoder().encode(jwtConfig.jweSecret);
-            const { payload } = await jwtDecrypt(token, secret);
-            return payload;
-        } catch (error) {
-            throw new Error('Invalid JWE token: ' + error.message);
+    /**
+     * Valida refresh token dal database
+     */
+    static async validateRefreshToken(employeeId, token) {
+        const [rows] = await pool.query(
+            `SELECT * FROM RefreshTokens 
+            WHERE EmployeeId = ? 
+            AND Token = ? 
+            AND ExpiresAt > NOW()
+            AND Revoked = FALSE`,
+            [employeeId, token]
+        );
+
+        return rows.length > 0;
+    }
+
+    /**
+     * Revoca refresh token
+     */
+    static async revokeRefreshToken(token) {
+        await pool.query(
+            `UPDATE RefreshTokens 
+            SET Revoked = TRUE, RevokedAt = NOW() 
+            WHERE Token = ?`,
+            [token]
+        );
+    }
+
+    /**
+     * Revoca tutti i refresh token di un employee
+     */
+    static async revokeAllRefreshTokens(employeeId) {
+        await pool.query(
+            `UPDATE RefreshTokens 
+            SET Revoked = TRUE, RevokedAt = NOW() 
+            WHERE EmployeeId = ?`,
+            [employeeId]
+        );
+    }
+
+    /**
+     * Cleanup token scaduti (manutenzione)
+     */
+    static async cleanupExpiredTokens() {
+        const [result] = await pool.query(
+            `DELETE FROM RefreshTokens 
+            WHERE ExpiresAt < NOW() OR Revoked = TRUE`
+        );
+
+        return result.affectedRows;
+    }
+
+    /**
+     * Validazione complessità password
+     * Requisiti: 6-14 caratteri, almeno 3 delle 4 categorie
+     */
+    static validatePasswordComplexity(password) {
+        const errors = [];
+
+        // Lunghezza
+        if (password.length < 6) {
+            errors.push('La password deve essere lunga almeno 6 caratteri');
         }
-    }
+        if (password.length > 14) {
+            errors.push('La password non può superare 14 caratteri');
+        }
 
-    // ===== 4. JWK (JSON Web Key) =====
-    static async getPublicJWK() {
-        const publicKey = crypto.createPublicKey(jwtConfig.publicKey);
-        const jwk = await exportJWK(publicKey);
+        // Categorie
+        const hasUppercase = /[A-Z]/.test(password);
+        const hasLowercase = /[a-z]/.test(password);
+        const hasNumbers = /[0-9]/.test(password);
+        const hasSpecial = /[-!$#%]/.test(password);
+
+        const categoriesCount = [
+            hasUppercase, 
+            hasLowercase, 
+            hasNumbers, 
+            hasSpecial
+        ].filter(Boolean).length;
+
+        if (categoriesCount < 3) {
+            errors.push('La password deve contenere almeno 3 delle seguenti categorie: maiuscole, minuscole, numeri, caratteri speciali');
+        }
 
         return {
-            ...jwk,
-            kid: 'key-1', // Key ID
-            use: 'sig',   // Signature
-            alg: 'RS256'
+            valid: errors.length === 0,
+            errors
         };
     }
 
-    // ===== Refresh Token (semplice JWT) =====
-    static generateRefreshToken(payload) {
-        return jwt.sign(payload, jwtConfig.refreshSecret, {
-            expiresIn: jwtConfig.refreshExpiresIn
-        });
+    /**
+     * Decodifica token senza verificarlo (per debug)
+     */
+    static decodeToken(token) {
+        return jwt.decode(token);
     }
 
-    static verifyRefreshToken(token) {
+    /**
+     * Ottieni tempo rimanente di validità del token (in secondi)
+     */
+    static getTokenTimeRemaining(token) {
         try {
-            return jwt.verify(token, jwtConfig.refreshSecret);
+            const decoded = jwt.decode(token);
+            if (!decoded || !decoded.exp) return 0;
+
+            const now = Math.floor(Date.now() / 1000);
+            const remaining = decoded.exp - now;
+
+            return Math.max(0, remaining);
         } catch (error) {
-            throw new Error('Invalid refresh token');
+            return 0;
         }
     }
+
+    /**
+     * Verifica se il token sta per scadere (< 1 minuto)
+     */
+    static isTokenExpiring(token) {
+        const remaining = this.getTokenTimeRemaining(token);
+        return remaining > 0 && remaining < 60;
+    }
 }
+
+// Cleanup automatico token ogni ora
+setInterval(async () => {
+    try {
+        const deleted = await TokenUtils.cleanupExpiredTokens();
+        if (deleted > 0) {
+            console.log(`Cleaned up ${deleted} expired tokens`);
+        }
+    } catch (error) {
+        console.error('Error cleaning up tokens:', error);
+    }
+}, 60 * 60 * 1000);
 
 module.exports = TokenUtils;
