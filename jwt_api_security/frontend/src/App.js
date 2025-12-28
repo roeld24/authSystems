@@ -7,7 +7,8 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Customers from './components/Customers';
 import Profile from './components/Profile';
-import AuditLogs from './components/AuditLogs.jsx';
+import AuditLogs from './components/AuditLogs';
+import ChangePassword from './components/ChangePassword';
 import './App.css';
 
 // Componente per proteggere le route
@@ -131,6 +132,13 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+
+                        <Route path="/change-password"
+                               element={
+                                <ProtectedRoute>
+                                    <ChangePassword />
+                                </ProtectedRoute>} />
+
                         
                         <Route
                             path="/profile"

@@ -77,8 +77,34 @@ export const authAPI = {
 
 // Protected API
 export const protectedAPI = {
+  // Metodi generici
   get: (url, options) => api.get(url, options),
-  post: (url, data, options) => api.post(url, data, options)
+  post: (url, data, options) => api.post(url, data, options),
+  put: (url, data, options) => api.put(url, data, options),
+  delete: (url, options) => api.delete(url, options),
+  
+  // Statistiche
+  getStatistics: () => api.get('/customers/statistics'),
+  
+  // Clienti
+  getCustomers: () => api.get('/customers'),
+  getCustomer: (id) => api.get(`/customers/${id}`),
+  createCustomer: (data) => api.post('/customers', data),
+  updateCustomer: (id, data) => api.put(`/customers/${id}`, data),
+  deleteCustomer: (id) => api.delete(`/customers/${id}`),
+
+  //cambio password
+  changePassword: (data) => api.post('/auth/change-password', data),
+
+  
+  // Fatture
+  getInvoices: (customerId) => api.get(`/customers/${customerId}/invoices`),
+  createInvoice: (customerId, data) => api.post(`/customers/${customerId}/invoices`, data),
+  updateInvoice: (customerId, invoiceId, data) => api.put(`/customers/${customerId}/invoices/${invoiceId}`, data),
+  deleteInvoice: (customerId, invoiceId) => api.delete(`/customers/${customerId}/invoices/${invoiceId}`),
+  
+  // Logs (solo manager)
+  getLogs: () => api.get('/logs')
 };
 
 export default api;

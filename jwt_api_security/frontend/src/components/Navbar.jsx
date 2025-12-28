@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { KeyRound } from 'lucide-react'; // Aggiungi questa icona
 
 function Navbar() {
     const { user, logout, isAuthenticated } = useAuth();
@@ -20,7 +21,17 @@ function Navbar() {
                     ) : (
                         <>
                             <Link to="/dashboard" style={styles.link}>Dashboard</Link>
-                            <span style={styles.user}>{user?.username}</span>
+                            <Link to="/customers" style={styles.link}>Clienti</Link>
+                            {user?.isManager && (
+                                <Link to="/logs" style={styles.link}>Audit Logs</Link>
+                            )}
+                            <Link to="/change-password" style={styles.link}>
+                                <KeyRound size={18} style={{ marginRight: '0.5rem' }} />
+                                Cambia Password
+                            </Link>
+                            <span style={styles.user}>
+                                {user?.firstName} {user?.lastName}
+                            </span>
                             <button onClick={logout} style={styles.button}>
                                 Logout
                             </button>
@@ -36,13 +47,14 @@ const styles = {
     nav: {
         backgroundColor: '#282c34',
         padding: '1rem 2rem',
-        color: 'white'
+        color: 'white',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
     },
     container: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        maxWidth: '1200px',
+        maxWidth: '1400px',
         margin: '0 auto'
     },
     logo: {
@@ -61,11 +73,14 @@ const styles = {
         textDecoration: 'none',
         padding: '0.5rem 1rem',
         borderRadius: '4px',
-        transition: 'background 0.3s'
+        transition: 'background 0.3s',
+        display: 'flex',
+        alignItems: 'center'
     },
     user: {
         marginLeft: '1rem',
-        color: '#61dafb'
+        color: '#61dafb',
+        fontWeight: '500'
     },
     button: {
         backgroundColor: '#61dafb',
@@ -74,7 +89,8 @@ const styles = {
         padding: '0.5rem 1rem',
         borderRadius: '4px',
         cursor: 'pointer',
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        transition: 'background 0.3s'
     }
 };
 

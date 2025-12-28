@@ -23,18 +23,22 @@ function Dashboard() {
         loadStatistics();
     }, []);
 
-    const loadStatistics = async () => {
-        try {
-            setLoading(true);
-            setError('');
-            const response = await protectedAPI.getStatistics();
-            setStats(response.data);
-        } catch (err) {
-            setError(err.response?.data?.error || 'Errore caricamento statistiche');
-        } finally {
-            setLoading(false);
-        }
-    };
+   const loadStatistics = async () => {
+    try {
+        setLoading(true);
+        setError('');
+        console.log('Chiamata API statistiche...'); // Debug
+        const response = await protectedAPI.getStatistics();
+        console.log('Risposta:', response.data); // Debug
+        setStats(response.data);
+    } catch (err) {
+        console.error('Errore completo:', err); // Debug dettagliato
+        console.error('Risposta errore:', err.response); // Debug response
+        setError(err.response?.data?.error || err.message || 'Errore caricamento statistiche');
+    } finally {
+        setLoading(false);
+    }
+};
 
     if (loading) {
         return (
