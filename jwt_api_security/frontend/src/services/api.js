@@ -93,9 +93,8 @@ export const protectedAPI = {
   updateCustomer: (id, data) => api.put(`/customers/${id}`, data),
   deleteCustomer: (id) => api.delete(`/customers/${id}`),
 
-  //cambio password
+  // Cambio password
   changePassword: (data) => api.post('/auth/change-password', data),
-
   
   // Fatture
   getInvoices: (customerId) => api.get(`/customers/${customerId}/invoices`),
@@ -103,8 +102,11 @@ export const protectedAPI = {
   updateInvoice: (customerId, invoiceId, data) => api.put(`/customers/${customerId}/invoices/${invoiceId}`, data),
   deleteInvoice: (customerId, invoiceId) => api.delete(`/customers/${customerId}/invoices/${invoiceId}`),
   
-  // Logs (solo manager)
-  getLogs: () => api.get('/logs')
+  // Audit Logs (solo manager)
+  getAuditLogs: (params) => api.get('/audit-logs', { params }),
+  getAuditActions: () => api.get('/audit-logs/actions'),
+  getSecurityEvents: (days) => api.get('/audit-logs/security-events', { params: { days } }),
+  getEmployeeStats: (employeeId, days) => api.get(`/audit-logs/employee/${employeeId}/stats`, { params: { days } })
 };
 
 export default api;
