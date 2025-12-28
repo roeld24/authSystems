@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const CustomerController = require('../controllers/customer.controller.js');
 const { 
-    authenticate, 
-    checkInactivity, 
+    authenticate,
     validateInput 
 } = require('../middleware/auth.middleware');
 
@@ -17,7 +16,6 @@ router.use(limiter);
 
 // Applica middleware a tutte le route
 router.use(authenticate);
-router.use(checkInactivity);
 router.use(validateInput);
 
 // Routes

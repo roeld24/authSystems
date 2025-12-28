@@ -1,4 +1,3 @@
-// src/components/Dashboard.js
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { protectedAPI } from '../services/api';
@@ -23,18 +22,22 @@ function Dashboard() {
         loadStatistics();
     }, []);
 
-    const loadStatistics = async () => {
-        try {
-            setLoading(true);
-            setError('');
-            const response = await protectedAPI.getStatistics();
-            setStats(response.data);
-        } catch (err) {
-            setError(err.response?.data?.error || 'Errore caricamento statistiche');
-        } finally {
-            setLoading(false);
-        }
-    };
+   const loadStatistics = async () => {
+    try {
+        setLoading(true);
+        setError('');
+        console.log('Chiamata API statistiche...');
+        const response = await protectedAPI.getStatistics();
+        console.log('Risposta:', response.data);
+        setStats(response.data);
+    } catch (err) {
+        console.error('Errore completo:', err);
+        console.error('Risposta errore:', err.response);
+        setError(err.response?.data?.error || err.message || 'Errore caricamento statistiche');
+    } finally {
+        setLoading(false);
+    }
+};
 
     if (loading) {
         return (
@@ -65,7 +68,7 @@ function Dashboard() {
             <div style={styles.welcomeSection}>
                 <div>
                     <h1 style={styles.title}>
-                        Benvenuto, {user?.firstName}! 👋
+                        Welcome, {user?.firstName}!
                     </h1>
                     <p style={styles.subtitle}>
                         {user?.isManager 
@@ -74,7 +77,7 @@ function Dashboard() {
                     </p>
                 </div>
                 <div style={styles.badge}>
-                    {user?.isManager ? '👑 Manager' : '👤 Employee'}
+                    {user?.isManager ? 'Manager' : 'Employee'}
                 </div>
             </div>
 

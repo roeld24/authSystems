@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { setRefreshToken, setOnTokenRefresh, setAccessToken } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { setRefreshToken, setOnTokenRefresh, setAccessToken, authAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -7,8 +7,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [tokens, setTokens] = useState({ accessToken: null, refreshToken: null });
   const [loading, setLoading] = useState(true);
+  const refreshTimerRef = useRef(null);
 
-  // Inizializza da localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const storedAccessToken = localStorage.getItem('accessToken');
@@ -28,7 +28,78 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Callback per refresh token
+  // Funzione per decodificare JWT e ottenere exp
+  const getTokenExpiration = (token) => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp * 1000;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const scheduleTokenRefresh = (accessToken, refreshToken) => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+    }
+
+    const expirationTime = getTokenExpiration(accessToken);
+    if (!expirationTime) return;
+
+    const now = Date.now();
+    const timeUntilExpiry = expirationTime - now;
+    
+    const refreshTime = Math.max(timeUntilExpiry - 30000, 0);
+
+    console.log(`⏰ Token expires in ${Math.floor(timeUntilExpiry / 1000)}s, will refresh in ${Math.floor(refreshTime / 1000)}s`);
+
+
+refreshTimerRef.current = setTimeout(async () => {
+  console.log('🔄 Auto-refreshing token...');
+  try {
+    const response = await authAPI.refresh(refreshToken);
+    
+    if (response.data.accessToken) {
+      const newAccessToken = response.data.accessToken;
+      
+      setTokens(prev => ({
+        ...prev,
+        accessToken: newAccessToken
+      }));
+
+      localStorage.setItem('accessToken', newAccessToken);
+      setAccessToken(newAccessToken);
+
+      console.log('✅ Token auto-refreshed successfully');
+      
+      // Programma il prossimo refresh
+      scheduleTokenRefresh(newAccessToken, refreshToken);
+    }
+  } catch (error) {
+    console.error('❌ Auto-refresh failed:', error);
+    
+    // Se il refresh token è scaduto, fai logout
+    if (error.response?.status === 401) {
+      console.log('REFRESH TOKEN SCADUTO - Il refresh token è scaduto dopo il tempo configurato');
+      console.log('Logout automatico in corso...');
+      logout();
+    }
+  }
+}, refreshTime);
+  };
+
+  useEffect(() => {
+    if (tokens.accessToken && tokens.refreshToken) {
+      scheduleTokenRefresh(tokens.accessToken, tokens.refreshToken);
+    }
+
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+    };
+  }, [tokens.accessToken, tokens.refreshToken]);
+
   useEffect(() => {
     setOnTokenRefresh((newTokens) => {
       if (newTokens?.accessToken) {
@@ -65,9 +136,15 @@ export const AuthProvider = ({ children }) => {
 
     setRefreshToken(userTokens.refreshToken);
     setAccessToken(userTokens.accessToken);
+
+    console.log('✅ Login successful');
   };
 
   const logout = () => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+    }
+
     setUser(null);
     setTokens({ accessToken: null, refreshToken: null });
 
@@ -77,6 +154,8 @@ export const AuthProvider = ({ children }) => {
 
     setRefreshToken(null);
     setAccessToken(null);
+
+    console.log('Logged out');
   };
 
   const updateUser = (newUserData) => {

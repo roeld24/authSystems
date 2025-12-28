@@ -1,4 +1,3 @@
-// src/middleware/auth.middleware.js
 const TokenUtils = require('../utils/tokenUtils');
 const Employee = require('../models/employee.model');
 const AuditLog = require('../models/auditLog.model');
@@ -14,7 +13,7 @@ async function authenticate(req, res, next) {
             return res.status(401).json({ error: 'Token mancante' });
         }
 
-        const token = authHeader.split(' ')[1]; // Bearer <token>
+        const token = authHeader.split(' ')[1];
         
         if (!token) {
             return res.status(401).json({ error: 'Token mancante' });
@@ -24,6 +23,11 @@ async function authenticate(req, res, next) {
         const decoded = TokenUtils.verifyJWT(token);
         req.user = decoded;
 
+        // Aggiorna lastActivity
+        if (decoded.userId) {
+            await Employee.updateLastActivity(decoded.userId);
+        }
+
         next();
     } catch (error) {
         console.error('Errore autenticazione:', error);
@@ -31,56 +35,6 @@ async function authenticate(req, res, next) {
     }
 }
 
-/**
- * Controlla inattività (2 minuti)
- */
-async function checkInactivity(req, res, next) {
-    try {
-        const employeeId = req.user?.userId;
-        
-        if (!employeeId) {
-            return next();
-        }
-
-        const employee = await Employee.findById(employeeId);
-        
-        if (!employee) {
-            return res.status(401).json({ error: 'Utente non trovato' });
-        }
-
-        // Calcola tempo inattività
-        const lastActivity = new Date(employee.lastActivity);
-        const now = new Date();
-        const inactiveMinutes = (now - lastActivity) / (1000 * 60);
-
-        if (inactiveMinutes > 2) {
-            // Logout per inattività
-            await AuditLog.log(
-                employeeId,
-                AuditLog.ACTIONS.SESSION_TIMEOUT,
-                `Inactive for ${Math.round(inactiveMinutes)} minutes`,
-                req
-            );
-
-            return res.status(401).json({ 
-                error: 'Sessione scaduta per inattività',
-                reason: 'timeout'
-            });
-        }
-
-        // Aggiorna lastActivity
-        await Employee.updateLastActivity(employeeId);
-
-        next();
-    } catch (error) {
-        console.error('Errore check inattività:', error);
-        next(); // Non bloccare per errori di check
-    }
-}
-
-/**
- * Richiede ruolo manager
- */
 async function requireManager(req, res, next) {
     try {
         if (!req.user?.isManager) {
@@ -108,7 +62,6 @@ async function requireManager(req, res, next) {
  */
 function validateInput(req, res, next) {
     try {
-        // Sanitizza parametri query
         if (req.query) {
             Object.keys(req.query).forEach(key => {
                 if (typeof req.query[key] === 'string') {
@@ -120,7 +73,6 @@ function validateInput(req, res, next) {
             });
         }
 
-        // Sanitizza parametri body (non per password!)
         if (req.body) {
             Object.keys(req.body).forEach(key => {
                 if (key !== 'password' && 
@@ -193,7 +145,7 @@ function autoLog(action, getDetails = () => '') {
             next();
         } catch (error) {
             console.error('Errore auto-logging:', error);
-            next(); // Non bloccare per errori di logging
+            next();
         }
     };
 }
@@ -204,7 +156,6 @@ function autoLog(action, getDetails = () => '') {
 function errorHandler(err, req, res, next) {
     console.error('Error:', err);
 
-    // Errori specifici
     if (err.name === 'ValidationError') {
         return res.status(400).json({ 
             error: 'Dati non validi',
@@ -218,7 +169,6 @@ function errorHandler(err, req, res, next) {
         });
     }
 
-    // Errore generico
     res.status(500).json({ 
         error: 'Si è verificato un errore. Riprova più tardi.' 
     });
@@ -244,7 +194,6 @@ setInterval(() => {
 
 module.exports = {
     authenticate,
-    checkInactivity,
     requireManager,
     validateInput,
     rateLimit,

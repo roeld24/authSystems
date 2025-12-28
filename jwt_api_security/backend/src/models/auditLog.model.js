@@ -1,8 +1,6 @@
-// src/models/auditLog.model.js
 const { pool } = require('../config/database');
 
 class AuditLog {
-    // Azioni tracciabili
     static ACTIONS = {
         LOGIN: 'LOGIN',
         LOGIN_FAILED: 'LOGIN_FAILED',
@@ -105,11 +103,11 @@ class AuditLog {
                 al.EmployeeId,
                 CONCAT(e.FirstName, ' ', e.LastName) as employeeName,
                 e.Email as employeeEmail,
-                al.Action,
-                al.Details,
-                al.IpAddress,
-                al.UserAgent,
-                al.CreatedAt
+                al.Action as action,
+                al.Details as details,
+                al.IpAddress as ipAddress,
+                al.UserAgent as userAgent,
+                al.Timestamp as createdAt
             FROM AuditLog al
             LEFT JOIN Employee e ON al.EmployeeId = e.EmployeeId
             WHERE 1=1
@@ -128,12 +126,12 @@ class AuditLog {
         }
 
         if (dateFrom) {
-            query += ` AND al.CreatedAt >= ?`;
+            query += ` AND DATE(al.Timestamp) >= ?`;
             params.push(dateFrom);
         }
 
         if (dateTo) {
-            query += ` AND al.CreatedAt <= ?`;
+            query += ` AND DATE(al.Timestamp) <= ?`;
             params.push(dateTo);
         }
 
@@ -142,44 +140,67 @@ class AuditLog {
                 al.Details LIKE ? OR 
                 al.IpAddress LIKE ? OR
                 e.FirstName LIKE ? OR
-                e.LastName LIKE ?
+                e.LastName LIKE ? OR
+                e.Email LIKE ?
             )`;
             const searchTerm = `%${search}%`;
-            params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+            params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
         }
 
-        query += ` ORDER BY al.CreatedAt DESC LIMIT ? OFFSET ?`;
+        query += ` ORDER BY al.Timestamp DESC LIMIT ? OFFSET ?`;
         params.push(parseInt(limit), parseInt(offset));
 
         const [rows] = await pool.query(query, params);
         return rows;
     }
 
-    /**
-     * Conta log con filtri
-     */
-    static async count(employeeId = null, filters = {}) {
-        let query = `SELECT COUNT(*) as total FROM AuditLog WHERE 1=1`;
+    static async count(filters = {}) {
+        const {
+            employeeId,
+            action,
+            dateFrom,
+            dateTo,
+            search
+        } = filters;
+
+        let query = `
+            SELECT COUNT(*) as total 
+            FROM AuditLog al
+            LEFT JOIN Employee e ON al.EmployeeId = e.EmployeeId
+            WHERE 1=1
+        `;
         const params = [];
 
         if (employeeId) {
-            query += ` AND EmployeeId = ?`;
+            query += ` AND al.EmployeeId = ?`;
             params.push(employeeId);
         }
 
-        if (filters.action) {
-            query += ` AND Action = ?`;
-            params.push(filters.action);
+        if (action) {
+            query += ` AND al.Action = ?`;
+            params.push(action);
         }
 
-        if (filters.dateFrom) {
-            query += ` AND CreatedAt >= ?`;
-            params.push(filters.dateFrom);
+        if (dateFrom) {
+            query += ` AND DATE(al.Timestamp) >= ?`;
+            params.push(dateFrom);
         }
 
-        if (filters.dateTo) {
-            query += ` AND CreatedAt <= ?`;
-            params.push(filters.dateTo);
+        if (dateTo) {
+            query += ` AND DATE(al.Timestamp) <= ?`;
+            params.push(dateTo);
+        }
+
+        if (search) {
+            query += ` AND (
+                al.Details LIKE ? OR 
+                al.IpAddress LIKE ? OR
+                e.FirstName LIKE ? OR
+                e.LastName LIKE ? OR
+                e.Email LIKE ?
+            )`;
+            const searchTerm = `%${search}%`;
+            params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
         }
 
         const [rows] = await pool.query(query, params);
@@ -205,15 +226,16 @@ class AuditLog {
                 al.LogId as id,
                 al.EmployeeId,
                 CONCAT(e.FirstName, ' ', e.LastName) as employeeName,
-                al.Action,
-                al.Details,
-                al.IpAddress,
-                al.CreatedAt
+                e.Email as employeeEmail,
+                al.Action as action,
+                al.Details as details,
+                al.IpAddress as ipAddress,
+                al.Timestamp as createdAt
             FROM AuditLog al
             LEFT JOIN Employee e ON al.EmployeeId = e.EmployeeId
             WHERE al.Action IN (?, ?, ?, ?)
-            AND al.CreatedAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
-            ORDER BY al.CreatedAt DESC`,
+            AND al.Timestamp >= DATE_SUB(NOW(), INTERVAL ? DAY)
+            ORDER BY al.Timestamp DESC`,
             [
                 this.ACTIONS.LOGIN_FAILED,
                 this.ACTIONS.UNAUTHORIZED_ACCESS,
@@ -234,10 +256,10 @@ class AuditLog {
                 COUNT(*) as totalActions,
                 COUNT(CASE WHEN Action = ? THEN 1 END) as logins,
                 COUNT(CASE WHEN Action = ? THEN 1 END) as failedLogins,
-                MAX(CreatedAt) as lastActivity
+                MAX(Timestamp) as lastActivity
             FROM AuditLog
             WHERE EmployeeId = ?
-            AND CreatedAt >= DATE_SUB(NOW(), INTERVAL ? DAY)`,
+            AND Timestamp >= DATE_SUB(NOW(), INTERVAL ? DAY)`,
             [
                 this.ACTIONS.LOGIN,
                 this.ACTIONS.LOGIN_FAILED,
@@ -260,7 +282,7 @@ class AuditLog {
     static async cleanOldLogs(days = 90) {
         const [result] = await pool.query(
             `DELETE FROM AuditLog 
-            WHERE CreatedAt < DATE_SUB(NOW(), INTERVAL ? DAY)`,
+            WHERE Timestamp < DATE_SUB(NOW(), INTERVAL ? DAY)`,
             [days]
         );
 
