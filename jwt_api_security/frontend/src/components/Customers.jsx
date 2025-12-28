@@ -27,10 +27,28 @@ function Customers() {
             }
 
             const res = await protectedAPI.get('/customers', { params });
-            setCustomers(res.data || []);
+            
+            // CORREZIONE: gestisci la struttura corretta della risposta
+            console.log('Risposta API:', res.data); // Debug
+            
+            // Se la risposta ha la proprietà customers
+            if (res.data.customers && Array.isArray(res.data.customers)) {
+                setCustomers(res.data.customers);
+            } 
+            // Se la risposta è direttamente un array
+            else if (Array.isArray(res.data)) {
+                setCustomers(res.data);
+            }
+            // Altrimenti array vuoto
+            else {
+                console.warn('Formato risposta inatteso:', res.data);
+                setCustomers([]);
+            }
+            
         } catch (err) {
             console.error('Errore fetch clienti:', err);
             setError('Errore caricamento clienti');
+            setCustomers([]); // IMPORTANTE: array vuoto in caso di errore
         } finally {
             setLoading(false);
         }
