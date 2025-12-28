@@ -38,7 +38,6 @@ class AuthController {
         }
 
         const isValidPassword = await bcrypt.compare(password, employee.password);
-        console.log('[DEBUG] Password check result:', isValidPassword);
 
         if (!isValidPassword) {
             await Employee.incrementFailedAttempts(sanitizedEmail);

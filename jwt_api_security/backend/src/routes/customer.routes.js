@@ -7,6 +7,14 @@ const {
     validateInput 
 } = require('../middleware/auth.middleware');
 
+var RateLimit = require('express-rate-limit');
+var limiter = RateLimit({
+    windowMs: 15*60*1000, // 1 minuto
+    max: 100 // limita ogni IP a 100 richieste per windowMs
+});
+
+router.use(limiter);
+
 // Applica middleware a tutte le route
 router.use(authenticate);
 router.use(checkInactivity);

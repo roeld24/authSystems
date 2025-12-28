@@ -82,7 +82,8 @@ class Customer {
         const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'LastName';
         const safeSortOrder = allowedOrders.includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'ASC';
         
-        query += ` ORDER BY ${safeSortBy} ${safeSortOrder}`;
+        query += ` ORDER BY ? ?`;
+        params.push(safeSortBy, safeSortOrder);
 
         // Paginazione
         query += ` LIMIT ? OFFSET ?`;
