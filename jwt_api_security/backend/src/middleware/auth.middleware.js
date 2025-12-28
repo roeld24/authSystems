@@ -24,6 +24,11 @@ async function authenticate(req, res, next) {
         const decoded = TokenUtils.verifyJWT(token);
         req.user = decoded;
 
+        // Aggiorna lastActivity
+        if (decoded.userId) {
+            await Employee.updateLastActivity(decoded.userId);
+        }
+
         next();
     } catch (error) {
         console.error('Errore autenticazione:', error);
@@ -32,51 +37,9 @@ async function authenticate(req, res, next) {
 }
 
 /**
- * Controlla inattività (2 minuti)
+ * RIMOSSO - Non più necessario il check di inattività
+ * Il token JWT gestisce già la scadenza
  */
-async function checkInactivity(req, res, next) {
-    try {
-        const employeeId = req.user?.userId;
-        
-        if (!employeeId) {
-            return next();
-        }
-
-        const employee = await Employee.findById(employeeId);
-        
-        if (!employee) {
-            return res.status(401).json({ error: 'Utente non trovato' });
-        }
-
-        // Calcola tempo inattività
-        const lastActivity = new Date(employee.lastActivity);
-        const now = new Date();
-        const inactiveMinutes = (now - lastActivity) / (1000 * 60);
-
-        if (inactiveMinutes > 2) {
-            // Logout per inattività
-            await AuditLog.log(
-                employeeId,
-                AuditLog.ACTIONS.SESSION_TIMEOUT,
-                `Inactive for ${Math.round(inactiveMinutes)} minutes`,
-                req
-            );
-
-            return res.status(401).json({ 
-                error: 'Sessione scaduta per inattività',
-                reason: 'timeout'
-            });
-        }
-
-        // Aggiorna lastActivity
-        await Employee.updateLastActivity(employeeId);
-
-        next();
-    } catch (error) {
-        console.error('Errore check inattività:', error);
-        next(); // Non bloccare per errori di check
-    }
-}
 
 /**
  * Richiede ruolo manager
@@ -244,7 +207,6 @@ setInterval(() => {
 
 module.exports = {
     authenticate,
-    checkInactivity,
     requireManager,
     validateInput,
     rateLimit,

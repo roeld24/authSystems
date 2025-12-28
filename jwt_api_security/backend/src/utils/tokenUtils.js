@@ -4,11 +4,15 @@ const { pool } = require('../config/database');
 
 class TokenUtils {
     /**
-     * Genera JWT access token
+     * Genera JWT access token con durata basata sul ruolo
+     * @param {object} payload - Payload del token (deve contenere isManager)
      */
     static generateJWT(payload) {
+        // Determina la durata in base al ruolo
+        const expiresIn = payload.isManager ? '5m' : '2m';
+        
         return jwt.sign(payload, process.env.JWT_SECRET, {
-            expiresIn: '5m', // 5 minuti come da requisiti
+            expiresIn,
             algorithm: 'HS256'
         });
     }
@@ -29,7 +33,7 @@ class TokenUtils {
      */
     static generateRefreshToken(payload) {
         return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
-            expiresIn: '7d', // 7 giorni
+            expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d', // USA VARIABILE ENV
             algorithm: 'HS256'
         });
     }
@@ -50,7 +54,30 @@ class TokenUtils {
      */
     static async saveRefreshToken(employeeId, token) {
         const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7); // 7 giorni
+        
+        // Calcola scadenza basandosi sulla variabile ENV
+        const refreshExpiry = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+        
+        // Parsea il tempo (supporta formato come '7d', '10s', '2h', ecc.)
+        const timeValue = parseInt(refreshExpiry);
+        const timeUnit = refreshExpiry.replace(/[0-9]/g, '');
+        
+        switch(timeUnit) {
+            case 's':
+                expiresAt.setSeconds(expiresAt.getSeconds() + timeValue);
+                break;
+            case 'm':
+                expiresAt.setMinutes(expiresAt.getMinutes() + timeValue);
+                break;
+            case 'h':
+                expiresAt.setHours(expiresAt.getHours() + timeValue);
+                break;
+            case 'd':
+                expiresAt.setDate(expiresAt.getDate() + timeValue);
+                break;
+            default:
+                expiresAt.setDate(expiresAt.getSeconds() + 10); // Default 7 giorni
+        }
 
         await pool.query(
             `INSERT INTO RefreshTokens (EmployeeId, Token, ExpiresAt) 
@@ -62,18 +89,45 @@ class TokenUtils {
     /**
      * Valida refresh token dal database
      */
-    static async validateRefreshToken(employeeId, token) {
-        const [rows] = await pool.query(
-            `SELECT * FROM RefreshTokens 
+  static async validateRefreshToken(employeeId, token) {
+    const [rows] = await pool.query(
+        `SELECT * FROM RefreshTokens 
+        WHERE EmployeeId = ? 
+        AND Token = ? 
+        AND ExpiresAt > NOW()
+        AND Revoked = FALSE`,
+        [employeeId, token]
+    );
+
+    if (rows.length === 0) {
+        // Controlla perché non è valido
+        const [allTokens] = await pool.query(
+            `SELECT ExpiresAt, Revoked FROM RefreshTokens 
             WHERE EmployeeId = ? 
-            AND Token = ? 
-            AND ExpiresAt > NOW()
-            AND Revoked = FALSE`,
+            AND Token = ?`,
             [employeeId, token]
         );
 
-        return rows.length > 0;
+        if (allTokens.length > 0) {
+            const tokenInfo = allTokens[0];
+            const now = new Date();
+            const expiresAt = new Date(tokenInfo.ExpiresAt);
+            
+            if (expiresAt < now) {
+                console.log(`⏰ REFRESH TOKEN SCADUTO NEL DATABASE`);
+                console.log(`   - Scaduto il: ${expiresAt.toLocaleString('it-IT')}`);
+                console.log(`   - Ora attuale: ${now.toLocaleString('it-IT')}`);
+                console.log(`   - Tempo trascorso: ${Math.floor((now - expiresAt) / 1000)}s dalla scadenza`);
+            }
+            
+            if (tokenInfo.Revoked) {
+                console.log(`🚫 REFRESH TOKEN REVOCATO (logout manuale o cambio password)`);
+            }
+        }
     }
+
+    return rows.length > 0;
+}
 
     /**
      * Revoca refresh token

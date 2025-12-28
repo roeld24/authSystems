@@ -70,18 +70,21 @@ class AuthController {
         console.log('[DEBUG] Login successful for user:', employee.id);
 
         res.json({
-            message: 'Login effettuato con successo',
-            user: {
-                id: employee.id,
-                firstName: employee.FirstName,
-                lastName: employee.LastName,
-                email: employee.Email,
-                title: employee.Title,
-                isManager
-            },
-            tokens: { accessToken, refreshToken },
-            tokenInfo: { expiresIn: '5m', refreshExpiresIn: '7d' }
-        });
+    message: 'Login effettuato con successo',
+    user: {
+        id: employee.id,
+        firstName: employee.FirstName,
+        lastName: employee.LastName,
+        email: employee.Email,
+        title: employee.Title,
+        isManager
+    },
+    tokens: { accessToken, refreshToken },
+    tokenInfo: { 
+        expiresIn: isManager ? '5m' : '2m',  // AGGIORNATO
+        refreshExpiresIn: '7d' 
+    }
+});
 
     } catch (error) {
         console.error('Errore login:', error);
@@ -92,40 +95,59 @@ class AuthController {
     /**
      * Refresh token
      */
-    static async refresh(req, res) {
-        try {
-            const { refreshToken } = req.body;
-            if (!refreshToken) return res.status(400).json({ error: 'Refresh token mancante' });
+static async refresh(req, res) {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) return res.status(400).json({ error: 'Refresh token mancante' });
 
-            const decoded = TokenUtils.verifyRefreshToken(refreshToken);
-            const isValid = await TokenUtils.validateRefreshToken(decoded.userId, refreshToken);
-            if (!isValid) return res.status(401).json({ error: 'Refresh token non valido o revocato' });
-
-            const employee = await Employee.findById(decoded.userId);
-            if (!employee) return res.status(404).json({ error: 'Utente non trovato' });
-
-            await Employee.updateLastActivity(employee.id);
-            const isManager = employee.Title && employee.Title.toLowerCase().includes('manager');
-
-            const payload = {
-                userId: employee.id,
-                email: employee.Email,
-                firstName: employee.FirstName,
-                lastName: employee.LastName,
-                isManager
-            };
-
-            const newAccessToken = TokenUtils.generateJWT(payload);
-            await AuditLog.logTokenRefresh(employee.id, req);
-
-            res.json({ message: 'Token rinnovato', accessToken: newAccessToken });
-
-        } catch (error) {
-            console.error('Errore refresh:', error);
-            res.status(401).json({ error: 'Refresh token non valido' });
+        console.log('🔍 Verifying refresh token...');
+        const decoded = TokenUtils.verifyRefreshToken(refreshToken);
+        
+        console.log('🔍 Validating refresh token in database...');
+        const isValid = await TokenUtils.validateRefreshToken(decoded.userId, refreshToken);
+        
+        if (!isValid) {
+            console.log('❌ REFRESH TOKEN SCADUTO O REVOCATO nel database');
+            return res.status(401).json({ error: 'Refresh token non valido o revocato' });
         }
-    }
 
+        const employee = await Employee.findById(decoded.userId);
+        if (!employee) return res.status(404).json({ error: 'Utente non trovato' });
+
+        await Employee.updateLastActivity(employee.id);
+        const isManager = employee.Title && employee.Title.toLowerCase().includes('manager');
+
+        const payload = {
+            userId: employee.id,
+            email: employee.Email,
+            firstName: employee.FirstName,
+            lastName: employee.LastName,
+            isManager
+        };
+
+        const newAccessToken = TokenUtils.generateJWT(payload);
+        await AuditLog.logTokenRefresh(employee.id, req);
+
+        // Log per debug
+        const expiresIn = isManager ? '5m' : '2m';
+        console.log(`✅ Token refreshed for ${employee.Email} (${isManager ? 'Manager' : 'Employee'}) - expires in ${expiresIn}`);
+
+        res.json({ 
+            message: 'Token rinnovato', 
+            accessToken: newAccessToken,
+            expiresIn 
+        });
+
+    } catch (error) {
+        console.error('❌ Errore refresh:', error.message);
+        
+        if (error.message === 'Refresh token non valido') {
+            console.log('⏰ REFRESH TOKEN JWT SCADUTO - Il token JWT ha superato il tempo di validità');
+        }
+        
+        res.status(401).json({ error: 'Refresh token non valido' });
+    }
+}
     /**
      * Logout
      */
