@@ -9,11 +9,9 @@ const api = axios.create({
   }
 });
 
-// Store per refresh token e callback
 let refreshTokenValue = null;
 let onTokenRefreshCallback = null;
 
-// Aggiorna header Authorization di default
 export const setAccessToken = (token) => {
   if (token) {
     api.defaults.headers['Authorization'] = `Bearer ${token}`;
@@ -30,7 +28,6 @@ export const setOnTokenRefresh = (callback) => {
   onTokenRefreshCallback = callback;
 };
 
-// Interceptor per gestire 401 (token scaduto)
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -49,10 +46,8 @@ api.interceptors.response.use(
 
         if (!newTokens?.accessToken) throw new Error('Refresh failed');
 
-        // Chiama la callback per aggiornare il contesto
         if (onTokenRefreshCallback) onTokenRefreshCallback(newTokens);
 
-        // Aggiorna header della richiesta originale
         originalRequest.headers = {
           ...originalRequest.headers,
           Authorization: `Bearer ${newTokens.accessToken}`
@@ -60,7 +55,7 @@ api.interceptors.response.use(
 
         return api(originalRequest);
       } catch (refreshError) {
-        if (onTokenRefreshCallback) onTokenRefreshCallback(null); // logout
+        if (onTokenRefreshCallback) onTokenRefreshCallback(null);
         return Promise.reject(refreshError);
       }
     }
@@ -68,16 +63,13 @@ api.interceptors.response.use(
   }
 );
 
-// Auth API
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   refresh: (refreshToken) => api.post('/auth/refresh', { refreshToken }),
   getJWK: () => api.get('/auth/jwk')
 };
 
-// Protected API
 export const protectedAPI = {
-  // Metodi generici
   get: (url, options) => api.get(url, options),
   post: (url, data, options) => api.post(url, data, options),
   put: (url, data, options) => api.put(url, data, options),

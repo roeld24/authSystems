@@ -1,8 +1,6 @@
-// src/models/auditLog.model.js
 const { pool } = require('../config/database');
 
 class AuditLog {
-    // Azioni tracciabili
     static ACTIONS = {
         LOGIN: 'LOGIN',
         LOGIN_FAILED: 'LOGIN_FAILED',
@@ -156,9 +154,6 @@ class AuditLog {
         return rows;
     }
 
-    /**
-     * Conta log con filtri (CORRETTO)
-     */
     static async count(filters = {}) {
         const {
             employeeId,

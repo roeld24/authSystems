@@ -19,7 +19,6 @@ function Login() {
 
     try {
       const response = await authAPI.login(formData);
-      // Assicurati che i nomi dei token siano corretti
       const tokens = {
         accessToken: response.data.tokens.accessToken,
         refreshToken: response.data.tokens.refreshToken

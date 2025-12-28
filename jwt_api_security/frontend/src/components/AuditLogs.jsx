@@ -20,9 +20,6 @@ function AuditLogs() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    /* =========================
-       FETCH ACTIONS
-    ========================= */
     const fetchActions = useCallback(async () => {
         try {
             const res = await protectedAPI.getAuditActions();
@@ -34,9 +31,7 @@ function AuditLogs() {
         }
     }, []);
 
-    /* =========================
-       FETCH LOGS
-    ========================= */
+
     const fetchLogs = useCallback(async () => {
         setLoading(true);
         setError('');
@@ -77,9 +72,7 @@ function AuditLogs() {
         }
     }, [filters, user]);
 
-    /* =========================
-       EFFECTS
-    ========================= */
+
     useEffect(() => {
         if (!user?.isManager) return;
 
@@ -92,9 +85,7 @@ function AuditLogs() {
         fetchLogs();
     }, [filters, user, fetchLogs]);
 
-    /* =========================
-       HANDLERS
-    ========================= */
+
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
 
@@ -137,9 +128,7 @@ function AuditLogs() {
         }));
     };
 
-    /* =========================
-       ACCESS CONTROL
-    ========================= */
+ 
     if (!user?.isManager) {
         return (
             <div style={styles.container}>
@@ -151,9 +140,7 @@ function AuditLogs() {
         );
     }
 
-    /* =========================
-       RENDER
-    ========================= */
+
     return (
         <div style={styles.container}>
             <h2>Audit Logs</h2>

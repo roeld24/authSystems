@@ -1,4 +1,3 @@
-// src/controllers/auth.controller.js
 const bcrypt = require('bcrypt');
 const Employee = require('../models/employee.model');
 const AuditLog = require('../models/auditLog.model');
@@ -81,7 +80,7 @@ class AuthController {
     },
     tokens: { accessToken, refreshToken },
     tokenInfo: { 
-        expiresIn: isManager ? '5m' : '2m',  // AGGIORNATO
+        expiresIn: isManager ? '5m' : '2m',
         refreshExpiresIn: '7d' 
     }
 });
@@ -128,7 +127,6 @@ static async refresh(req, res) {
         const newAccessToken = TokenUtils.generateJWT(payload);
         await AuditLog.logTokenRefresh(employee.id, req);
 
-        // Log per debug
         const expiresIn = isManager ? '5m' : '2m';
         console.log(`✅ Token refreshed for ${employee.Email} (${isManager ? 'Manager' : 'Employee'}) - expires in ${expiresIn}`);
 

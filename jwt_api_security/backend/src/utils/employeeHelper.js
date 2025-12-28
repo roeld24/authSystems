@@ -1,4 +1,3 @@
-// src/utils/employeeHelper.js
 
 /**
  * Helper functions per Employee

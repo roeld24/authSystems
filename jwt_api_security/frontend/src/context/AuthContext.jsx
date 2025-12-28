@@ -9,7 +9,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const refreshTimerRef = useRef(null);
 
-  // Inizializza da localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     const storedAccessToken = localStorage.getItem('accessToken');
@@ -33,15 +32,13 @@ export const AuthProvider = ({ children }) => {
   const getTokenExpiration = (token) => {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp * 1000; // Converti in millisecondi
+      return payload.exp * 1000;
     } catch (error) {
       return null;
     }
   };
 
-  // Auto-refresh token prima della scadenza
   const scheduleTokenRefresh = (accessToken, refreshToken) => {
-    // Cancella timer precedente
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
     }
@@ -52,12 +49,10 @@ export const AuthProvider = ({ children }) => {
     const now = Date.now();
     const timeUntilExpiry = expirationTime - now;
     
-    // Refresh 30 secondi prima della scadenza
     const refreshTime = Math.max(timeUntilExpiry - 30000, 0);
 
     console.log(`⏰ Token expires in ${Math.floor(timeUntilExpiry / 1000)}s, will refresh in ${Math.floor(refreshTime / 1000)}s`);
 
-    // Nella funzione scheduleTokenRefresh, modifica la parte del catch:
 
 refreshTimerRef.current = setTimeout(async () => {
   console.log('🔄 Auto-refreshing token...');
@@ -67,7 +62,6 @@ refreshTimerRef.current = setTimeout(async () => {
     if (response.data.accessToken) {
       const newAccessToken = response.data.accessToken;
       
-      // Aggiorna tokens
       setTokens(prev => ({
         ...prev,
         accessToken: newAccessToken
@@ -86,15 +80,14 @@ refreshTimerRef.current = setTimeout(async () => {
     
     // Se il refresh token è scaduto, fai logout
     if (error.response?.status === 401) {
-      console.log('⏰ REFRESH TOKEN SCADUTO - Il refresh token è scaduto dopo il tempo configurato');
-      console.log('🚪 Logout automatico in corso...');
+      console.log('REFRESH TOKEN SCADUTO - Il refresh token è scaduto dopo il tempo configurato');
+      console.log('Logout automatico in corso...');
       logout();
     }
   }
 }, refreshTime);
   };
 
-  // Avvia auto-refresh quando i token cambiano
   useEffect(() => {
     if (tokens.accessToken && tokens.refreshToken) {
       scheduleTokenRefresh(tokens.accessToken, tokens.refreshToken);
@@ -107,7 +100,6 @@ refreshTimerRef.current = setTimeout(async () => {
     };
   }, [tokens.accessToken, tokens.refreshToken]);
 
-  // Callback per refresh token manuale (da interceptor)
   useEffect(() => {
     setOnTokenRefresh((newTokens) => {
       if (newTokens?.accessToken) {
@@ -149,7 +141,6 @@ refreshTimerRef.current = setTimeout(async () => {
   };
 
   const logout = () => {
-    // Cancella timer
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
     }
@@ -164,7 +155,7 @@ refreshTimerRef.current = setTimeout(async () => {
     setRefreshToken(null);
     setAccessToken(null);
 
-    console.log('🚪 Logged out');
+    console.log('Logged out');
   };
 
   const updateUser = (newUserData) => {

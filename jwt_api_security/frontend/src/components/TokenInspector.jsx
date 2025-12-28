@@ -1,4 +1,3 @@
-// src/components/TokenInspector.js
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Eye, EyeOff, Copy, Check, Clock, Shield } from 'lucide-react';

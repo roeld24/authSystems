@@ -1,4 +1,3 @@
-// src/controllers/customer.controller.js
 const Customer = require('../models/customer.model');
 const AuditLog = require('../models/auditLog.model');
 
@@ -10,7 +9,6 @@ class CustomerController {
         try {
             const user = req.user;
             
-            // Manager vedono tutti, employee solo i propri
             const employeeId = user.isManager ? null : user.userId;
 
             const filters = {
@@ -27,7 +25,6 @@ class CustomerController {
             const customers = await Customer.getAll(filters);
             const total = await Customer.count(filters);
 
-            // Log accesso
             await AuditLog.log(
                 user.userId, 
                 AuditLog.ACTIONS.VIEW_CUSTOMERS,
@@ -106,7 +103,6 @@ class CustomerController {
                 return res.status(404).json({ error: 'Cliente non trovato' });
             }
 
-            // Verifica autorizzazione
             if (!user.isManager && customer.SupportRepId !== user.userId) {
                 await AuditLog.log(
                     user.userId,
@@ -120,7 +116,6 @@ class CustomerController {
                 });
             }
 
-            // Ottieni fatture
             const invoices = await Customer.getInvoices(customerId, 10);
 
             await AuditLog.log(
@@ -191,7 +186,7 @@ class CustomerController {
             }
 
             const customers = await Customer.getAll({
-                limit: 10000 // Export massivo
+                limit: 10000
             });
 
             await AuditLog.log(
@@ -201,7 +196,7 @@ class CustomerController {
                 req
             );
 
-            // Converte in CSV
+            // Converte in CSV, funzionalita' da finire
             const csv = convertToCSV(customers);
 
             res.setHeader('Content-Type', 'text/csv');

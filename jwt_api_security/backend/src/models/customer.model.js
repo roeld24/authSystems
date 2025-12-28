@@ -1,4 +1,3 @@
-// src/models/customer.model.js
 const { pool } = require('../config/database');
 
 class Customer {

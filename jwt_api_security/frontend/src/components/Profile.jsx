@@ -1,4 +1,3 @@
-// src/components/Profile.js
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
@@ -26,7 +25,6 @@ function Profile() {
     const handleChangePassword = async () => {
         setMessage({ type: '', text: '' });
 
-        // Validazione frontend
         if (!currentPassword || !newPassword || !confirmPassword) {
             setMessage({ type: 'error', text: 'Tutti i campi sono obbligatori' });
             return;
@@ -42,7 +40,6 @@ function Profile() {
             return;
         }
 
-        // Verifica complessità
         const hasUppercase = /[A-Z]/.test(newPassword);
         const hasLowercase = /[a-z]/.test(newPassword);
         const hasNumbers = /[0-9]/.test(newPassword);
@@ -68,7 +65,7 @@ function Profile() {
 
             setMessage({ 
                 type: 'success', 
-                text: '✅ Password cambiata con successo! Verrai disconnesso tra 3 secondi...' 
+                text: 'Password cambiata con successo! Verrai disconnesso tra 3 secondi...' 
             });
 
             // Reset form
@@ -114,7 +111,7 @@ function Profile() {
                         label="Ruolo" 
                         value={
                             <span style={user?.isManager ? styles.badgeManager : styles.badgeEmployee}>
-                                {user?.isManager ? '👑 Manager' : '👤 Employee'}
+                                {user?.isManager ? 'Manager' : 'Employee'}
                             </span>
                         } 
                     />

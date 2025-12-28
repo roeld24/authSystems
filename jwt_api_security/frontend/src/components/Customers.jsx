@@ -1,4 +1,3 @@
-// src/components/Customers.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { protectedAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +10,6 @@ function Customers() {
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({ limit: 50, offset: 0 });
 
-    // fetchCustomers avvolta in useCallback
     const fetchCustomers = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -28,18 +26,14 @@ function Customers() {
 
             const res = await protectedAPI.get('/customers', { params });
             
-            // CORREZIONE: gestisci la struttura corretta della risposta
-            console.log('Risposta API:', res.data); // Debug
+            console.log('Risposta API:', res.data);
             
-            // Se la risposta ha la proprietà customers
             if (res.data.customers && Array.isArray(res.data.customers)) {
                 setCustomers(res.data.customers);
             } 
-            // Se la risposta è direttamente un array
             else if (Array.isArray(res.data)) {
                 setCustomers(res.data);
             }
-            // Altrimenti array vuoto
             else {
                 console.warn('Formato risposta inatteso:', res.data);
                 setCustomers([]);
@@ -48,7 +42,7 @@ function Customers() {
         } catch (err) {
             console.error('Errore fetch clienti:', err);
             setError('Errore caricamento clienti');
-            setCustomers([]); // IMPORTANTE: array vuoto in caso di errore
+            setCustomers([]);
         } finally {
             setLoading(false);
         }

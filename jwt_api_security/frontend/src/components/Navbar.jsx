@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { KeyRound } from 'lucide-react'; // Aggiungi questa icona
+import { KeyRound } from 'lucide-react';
 
 function Navbar() {
     const { user, logout, isAuthenticated } = useAuth();

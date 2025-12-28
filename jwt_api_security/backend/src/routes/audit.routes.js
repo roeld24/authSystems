@@ -6,7 +6,6 @@ const {
     requireManager 
 } = require('../middleware/auth.middleware');
 
-// Applica middleware: solo manager autenticati
 router.use(authenticate);
 router.use(requireManager);
 
@@ -36,7 +35,7 @@ router.get('/', async (req, res) => {
         res.json({ 
             logs, 
             total,
-            filters // Per debug
+            filters
         });
     } catch (error) {
         console.error('Error fetching audit logs:', error);

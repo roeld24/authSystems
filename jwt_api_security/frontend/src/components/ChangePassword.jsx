@@ -1,4 +1,3 @@
-// src/components/ChangePassword.js
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { protectedAPI } from '../services/api';
@@ -72,7 +71,6 @@ function ChangePassword() {
         setError('');
         setSuccess(false);
 
-        // Validazioni client-side
         if (formData.newPassword !== formData.confirmPassword) {
             setError('Le password non coincidono');
             return;
@@ -99,7 +97,6 @@ function ChangePassword() {
             setSuccess(true);
             setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
             
-            // Logout automatico dopo 3 secondi
             setTimeout(() => {
                 logout();
             }, 3000);

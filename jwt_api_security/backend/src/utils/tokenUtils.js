@@ -1,4 +1,3 @@
-// src/utils/tokenUtils.js
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 
@@ -114,14 +113,14 @@ class TokenUtils {
             const expiresAt = new Date(tokenInfo.ExpiresAt);
             
             if (expiresAt < now) {
-                console.log(`⏰ REFRESH TOKEN SCADUTO NEL DATABASE`);
+                console.log(` REFRESH TOKEN SCADUTO NEL DATABASE`);
                 console.log(`   - Scaduto il: ${expiresAt.toLocaleString('it-IT')}`);
                 console.log(`   - Ora attuale: ${now.toLocaleString('it-IT')}`);
                 console.log(`   - Tempo trascorso: ${Math.floor((now - expiresAt) / 1000)}s dalla scadenza`);
             }
             
             if (tokenInfo.Revoked) {
-                console.log(`🚫 REFRESH TOKEN REVOCATO (logout manuale o cambio password)`);
+                console.log(` REFRESH TOKEN REVOCATO (logout manuale o cambio password)`);
             }
         }
     }
